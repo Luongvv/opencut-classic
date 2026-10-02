@@ -29,6 +29,7 @@ export default function RootLayout({
 		<html lang="en" suppressHydrationWarning>
 			<head>
 				<BotIdClient protect={protectedRoutes} />
+					{/* react-scan disabled — uncomment to debug re-renders
 				{process.env.NODE_ENV === "development" && (
 					<>
 						<Script
@@ -38,6 +39,7 @@ export default function RootLayout({
 						/>
 					</>
 				)}
+				*/}
 			</head>
 			<body className={`${siteFont.className} font-sans antialiased`}>
 				<ThemeProvider
