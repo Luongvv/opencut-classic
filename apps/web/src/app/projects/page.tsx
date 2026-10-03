@@ -4,8 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { KeyboardEvent, MouseEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Download, Upload } from "lucide-react";
+import { StorytellingTemplateButton } from "@/templates/storytelling-smart-cut";
 import type { EditorCore } from "@/core";
 import { MigrationDialog } from "@/project/components/migration-dialog";
 import { StoragePersistenceDialog } from "@/services/storage/components/storage-persistence-dialog";
@@ -182,8 +184,10 @@ function ProjectsHeader() {
 					</div>
 				</div>
 
-				<div className="flex items-center gap-3 md:gap-4">
-					<SearchBar className="hidden md:block" />
+				<div className="flex items-center gap-2 sm:gap-3">
+					<SearchBar className="hidden xl:block" />
+					<ImportProjectButton />
+					<StorytellingTemplateButton />
 					<NewProjectButton />
 				</div>
 			</div>
@@ -504,6 +508,63 @@ function SortDropdown({ children }: { children: React.ReactNode }) {
 	);
 }
 
+function ImportProjectButton() {
+	const editor = useEditor();
+	const router = useRouter();
+	const [isImporting, setIsImporting] = useState(false);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+
+	const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+		const file = event.target.files?.[0];
+		if (!file) return;
+
+		setIsImporting(true);
+		try {
+			const jsonString = await file.text();
+			const projectId = await editor.project.importProjectFromJson({ jsonString });
+			toast.success(`Đã nạp dự án thành công: ${file.name}`, {
+				description: "Dự án đã được lưu vào OpenCut và tự động đồng bộ ra ổ đĩa máy tính.",
+			});
+			router.push(`/editor/${projectId}`);
+		} catch (error) {
+			console.error("Import error:", error);
+			toast.error("Không thể mở tệp dự án", {
+				description:
+					error instanceof Error ? error.message : "Định dạng JSON không hợp lệ.",
+			});
+		} finally {
+			setIsImporting(false);
+			if (fileInputRef.current) {
+				fileInputRef.current.value = "";
+			}
+		}
+	};
+
+	return (
+		<>
+			<input
+				type="file"
+				ref={fileInputRef}
+				accept=".json,.opencut.json"
+				className="hidden"
+				onChange={handleFileChange}
+			/>
+			<Button
+				variant="outline"
+				size="lg"
+				className="flex gap-2 items-center px-4"
+				onClick={() => fileInputRef.current?.click()}
+				disabled={isImporting}
+			>
+				<Upload className="size-4" />
+				<span className="text-sm font-medium hidden sm:inline">
+					{isImporting ? "Đang nạp..." : "Nhập dự án (.json)"}
+				</span>
+			</Button>
+		</>
+	);
+}
+
 function NewProjectButton() {
 	const editor = useEditor();
 	const router = useRouter();
@@ -555,6 +616,9 @@ function ProjectItem({
 	const handleRename = () => setIsRenameDialogOpen(true);
 	const handleDuplicate = async () => {
 		await duplicateProjects({ editor, ids: [project.id] });
+	};
+	const handleExport = () => {
+		void editor.project.downloadProjectJson({ id: project.id });
 	};
 	const handleDeleteClick = () => setIsDeleteDialogOpen(true);
 	const handleInfoClick = () => setIsInfoDialogOpen(true);
@@ -677,6 +741,7 @@ function ProjectItem({
 					onDuplicateClick={handleDuplicate}
 					onDeleteClick={handleDeleteClick}
 					onInfoClick={handleInfoClick}
+					onExportClick={handleExport}
 				/>
 			)}
 		</div>
@@ -718,6 +783,7 @@ function ProjectItem({
 										onDuplicateClick={handleDuplicate}
 										onDeleteClick={handleDeleteClick}
 										onInfoClick={handleInfoClick}
+										onExportClick={handleExport}
 									/>
 								)}
 							</>
@@ -731,6 +797,7 @@ function ProjectItem({
 					onDuplicateClick={handleDuplicate}
 					onDeleteClick={handleDeleteClick}
 					onInfoClick={handleInfoClick}
+					onExportClick={handleExport}
 				/>
 			</ContextMenu>
 
@@ -765,11 +832,13 @@ function ProjectContextMenuContent({
 	onDuplicateClick,
 	onDeleteClick,
 	onInfoClick,
+	onExportClick,
 }: {
 	onRenameClick: () => void;
 	onDuplicateClick: () => void;
 	onDeleteClick: () => void;
 	onInfoClick: () => void;
+	onExportClick?: () => void;
 }) {
 	return (
 		<ContextMenuContent>
@@ -785,6 +854,14 @@ function ProjectContextMenuContent({
 			>
 				Duplicate
 			</ContextMenuItem>
+			{onExportClick && (
+				<ContextMenuItem
+					icon={<Download className="size-4" />}
+					onClick={onExportClick}
+				>
+					Xuất tệp (.json)
+				</ContextMenuItem>
+			)}
 			<ContextMenuItem
 				icon={<HugeiconsIcon icon={InformationCircleIcon} />}
 				onClick={onInfoClick}
@@ -811,6 +888,7 @@ function ProjectMenu({
 	onDuplicateClick,
 	onDeleteClick,
 	onInfoClick,
+	onExportClick,
 }: {
 	isOpen: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -819,6 +897,7 @@ function ProjectMenu({
 	onDuplicateClick: () => void;
 	onDeleteClick: () => void;
 	onInfoClick: () => void;
+	onExportClick?: () => void;
 }) {
 	const handleMenuClick = ({
 		event,
@@ -848,6 +927,11 @@ function ProjectMenu({
 
 	const handleDuplicate = () => {
 		onDuplicateClick();
+		onOpenChange(false);
+	};
+
+	const handleExport = () => {
+		onExportClick?.();
 		onOpenChange(false);
 	};
 
@@ -903,6 +987,12 @@ function ProjectMenu({
 					<HugeiconsIcon icon={Copy01Icon} />
 					Duplicate
 				</DropdownMenuItem>
+				{onExportClick && (
+					<DropdownMenuItem onClick={handleExport}>
+						<Download className="size-4" />
+						Xuất tệp (.json)
+					</DropdownMenuItem>
+				)}
 				<DropdownMenuItem onClick={handleInfoClick}>
 					<HugeiconsIcon icon={InformationCircleIcon} />
 					Info

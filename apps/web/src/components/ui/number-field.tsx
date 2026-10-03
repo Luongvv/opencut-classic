@@ -2,11 +2,11 @@
 
 import { cn } from "@/utils/ui";
 import { clamp } from "@/utils/math";
-import { useRef, useState, useLayoutEffect, type ComponentProps } from "react";
+import { useRef, useState, useLayoutEffect, useEffect, type ComponentProps } from "react";
 import { useFocusLock } from "@/hooks/use-focus-lock";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowTurnBackwardIcon } from "@hugeicons/core-free-icons";
+import { ArrowTurnBackwardIcon, PlusSignIcon, MinusSignIcon } from "@hugeicons/core-free-icons";
 
 const SUFFIX_GAP_PX = 6;
 
@@ -110,6 +110,7 @@ interface NumberFieldProps
 	allowExpressions?: boolean;
 	onReset?: () => void;
 	isDefault?: boolean;
+	step?: number;
 }
 
 function NumberField({
@@ -131,6 +132,7 @@ function NumberField({
 	onMouseDown,
 	onReset,
 	isDefault = false,
+	step,
 	ref,
 	...props
 }: NumberFieldProps & { ref?: React.Ref<HTMLInputElement> }) {
@@ -163,6 +165,56 @@ function NumberField({
 		cursor: "text",
 		allowSelector: "input, textarea, [contenteditable]",
 	});
+
+	const applyStepChange = (direction: number, multiplier = 1) => {
+		if (!onScrub || disabled) return;
+		const parsed = parseFloat(String(value ?? "0"));
+		const current = Number.isNaN(parsed) ? 0 : parsed;
+		const nextValue = current + direction * (step ?? 1) * multiplier;
+		const clamped = clampScrubValue({
+			value: nextValue,
+			min: scrubClamp?.min,
+			max: scrubClamp?.max,
+		});
+		onScrub(clamped);
+		onScrubEnd?.();
+	};
+
+	useEffect(() => {
+		const input = inputRef.current;
+		if (!input || !isInputFocused) return;
+
+		let commitTimeout: ReturnType<typeof setTimeout>;
+
+		const handleWheel = (event: WheelEvent) => {
+			event.preventDefault();
+			const direction = event.deltaY > 0 ? -1 : 1;
+			let multiplier = 1;
+			if (event.shiftKey) multiplier = 10;
+			if (event.altKey) multiplier = 0.1;
+
+			const parsed = parseFloat(String(value ?? "0"));
+			const current = Number.isNaN(parsed) ? 0 : parsed;
+			const nextValue = current + direction * (step ?? 1) * multiplier;
+			const clamped = clampScrubValue({
+				value: nextValue,
+				min: scrubClamp?.min,
+				max: scrubClamp?.max,
+			});
+			onScrub?.(clamped);
+
+			clearTimeout(commitTimeout);
+			commitTimeout = setTimeout(() => {
+				onScrubEnd?.();
+			}, 300);
+		};
+
+		input.addEventListener("wheel", handleWheel, { passive: false });
+		return () => {
+			input.removeEventListener("wheel", handleWheel);
+			clearTimeout(commitTimeout);
+		};
+	}, [isInputFocused, value, step, scrubClamp, onScrub, onScrubEnd, disabled]);
 
 	const handleIconPointerDown = (event: React.PointerEvent) => {
 		if (!onScrub || disabled || event.button !== 0) return;
@@ -230,6 +282,15 @@ function NumberField({
 				onFocus?.(event);
 			}}
 			onKeyDown={(event) => {
+				if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+					event.preventDefault();
+					const direction = event.key === "ArrowUp" ? 1 : -1;
+					let multiplier = 1;
+					if (event.shiftKey) multiplier = 10;
+					if (event.altKey) multiplier = 0.1;
+					applyStepChange(direction, multiplier);
+					onScrubEnd?.(); // Commits immediately on key press
+				}
 				const shouldBlurInput = event.key === "Enter" || event.key === "Escape";
 				if (shouldBlurInput) event.currentTarget.blur();
 				onKeyDown?.(event);
@@ -243,14 +304,15 @@ function NumberField({
 	);
 
 	return (
-		<div
-			ref={wrapperRef}
-			className={cn(
-				"border-border bg-accent flex h-7 w-full min-w-0 items-center rounded-md border text-sm outline-none cursor-text disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-within:border-primary focus-within:ring-0 focus-within:ring-primary/10 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-				disabled && "pointer-events-none cursor-not-allowed opacity-50",
-				className,
-			)}
-		>
+		<div className="flex items-center gap-1.5 shrink-0">
+			<div
+				ref={wrapperRef}
+				className={cn(
+					"border-border bg-accent flex h-7 min-w-0 items-center rounded-md border text-sm outline-none cursor-text disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-within:border-primary focus-within:ring-0 focus-within:ring-primary/10 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+					disabled && "pointer-events-none cursor-not-allowed opacity-50",
+					className,
+				)}
+			>
 			{icon &&
 				(canScrub ? (
 					<button
@@ -299,17 +361,39 @@ function NumberField({
 					</>
 				)}
 			</span>
+		</div>
+
+			<div className="border-border bg-accent flex h-7 shrink-0 items-center overflow-hidden rounded-md border">
+				<button
+					type="button"
+					aria-label="Decrease"
+					className="flex h-full w-6 items-center justify-center border-r border-border/50 text-muted-foreground hover:bg-accent-hover hover:text-foreground active:scale-95 disabled:pointer-events-none disabled:opacity-50 cursor-pointer transition-colors"
+					onClick={() => applyStepChange(-1)}
+					disabled={disabled}
+				>
+					<HugeiconsIcon icon={MinusSignIcon} className="size-3!" />
+				</button>
+				<button
+					type="button"
+					aria-label="Increase"
+					className="flex h-full w-6 items-center justify-center text-muted-foreground hover:bg-accent-hover hover:text-foreground active:scale-95 disabled:pointer-events-none disabled:opacity-50 cursor-pointer transition-colors"
+					onClick={() => applyStepChange(1)}
+					disabled={disabled}
+				>
+					<HugeiconsIcon icon={PlusSignIcon} className="size-3!" />
+				</button>
+			</div>
+
 			{onReset && !isDefault && (
-				<div className="shrink-0 pr-2 flex items-center">
-					<Button
-						variant="text"
-						size="text"
-						aria-label="Reset to default"
-						onClick={onReset}
-					>
-						<HugeiconsIcon icon={ArrowTurnBackwardIcon} className="size-3.5!" />
-					</Button>
-				</div>
+				<Button
+					variant="ghost"
+					size="icon"
+					aria-label="Reset to default"
+					className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+					onClick={onReset}
+				>
+					<HugeiconsIcon icon={ArrowTurnBackwardIcon} className="size-3.5!" />
+				</Button>
 			)}
 		</div>
 	);

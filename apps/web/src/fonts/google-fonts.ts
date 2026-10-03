@@ -66,15 +66,31 @@ export async function loadFullFont({
 	link.rel = "stylesheet";
 	link.href = url;
 	document.head.appendChild(link);
-	await new Promise<void>((resolve) => {
-		link.addEventListener("load", () => resolve(), { once: true });
-		link.addEventListener("error", () => resolve(), { once: true });
-	});
-	await Promise.all(
-		weights.map((weight) =>
-			document.fonts.load(`${weight} 16px "${family.replace(/"/g, '\\"')}"`),
-		),
-	);
+	
+	try {
+		await new Promise<void>((resolve, reject) => {
+			link.addEventListener("load", () => resolve(), { once: true });
+			link.addEventListener("error", () => reject(new Error("Failed")), { once: true });
+		});
+		await Promise.all(
+			weights.map((weight) =>
+				document.fonts.load(`${weight} 16px "${family.replace(/"/g, '\\"')}"`),
+			),
+		);
+	} catch (error) {
+		// Fallback to local system font API
+		const face = new FontFace(
+			family,
+			`url(/api/fonts/file?family=${encodeURIComponent(family)})`,
+		);
+		try {
+			const loadedFace = await face.load();
+			document.fonts.add(loadedFace);
+		} catch (e) {
+			console.warn(`Could not load font ${family}`);
+		}
+	}
+	
 	fullLoaded.add(family);
 }
 

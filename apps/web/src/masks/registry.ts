@@ -39,6 +39,7 @@ export const BASE_MASK_PARAM_DEFINITIONS: ParamDefinition<
 		max: MAX_FEATHER,
 		step: 1,
 		unit: "percent",
+		slider: { min: 0, max: MAX_FEATHER },
 	},
 	{
 		key: "strokeWidth",
@@ -48,6 +49,7 @@ export const BASE_MASK_PARAM_DEFINITIONS: ParamDefinition<
 		min: 0,
 		max: 100,
 		step: 1,
+		slider: { min: 0, max: 100 },
 	},
 	{
 		key: "strokeColor",

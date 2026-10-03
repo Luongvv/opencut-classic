@@ -8,6 +8,7 @@ import {
 	minMediaTime,
 	subMediaTime,
 	TICKS_PER_SECOND,
+	ZERO_MEDIA_TIME,
 } from "@/wasm";
 import {
 	computeGroupResize,
@@ -52,6 +53,7 @@ type Session = { kind: "idle" } | ResizeSession;
 export interface ResizeConfig {
 	zoomLevel: number;
 	snappingEnabled: boolean;
+	rippleEditingEnabled: boolean;
 	isShiftHeld: () => boolean;
 	getSceneTracks: () => SceneTracks;
 	getCurrentPlayheadTime: () => MediaTime;
@@ -72,9 +74,11 @@ export interface ResizeConfigRef {
 export function buildResizeMembers({
 	tracks,
 	selectedElements,
+	rippleEditingEnabled = false,
 }: {
 	tracks: SceneTracks;
 	selectedElements: ElementRef[];
+	rippleEditingEnabled?: boolean;
 }): GroupResizeMember[] {
 	const selectedElementIds = new Set(
 		selectedElements.map((el) => el.elementId),
@@ -91,6 +95,7 @@ export function buildResizeMembers({
 		const element = track?.elements.find((el) => el.id === elementId);
 		if (!track || !element) return [];
 
+		const isMainTrack = trackId === tracks.main.id;
 		const otherElements = track.elements.filter(
 			(el) => !selectedElementIds.has(el.id),
 		);
@@ -109,18 +114,22 @@ export function buildResizeMembers({
 					? elementEnd
 					: maxMediaTime({ a: bound, b: elementEnd });
 			}, null);
-		const rightNeighborBound = otherElements
-			.filter(
-				(el) =>
-					el.startTime >= addMediaTime({ a: element.startTime, b: element.duration }),
-			)
-			.reduce<MediaTime | null>(
-				(bound, el) =>
-					bound === null
-						? el.startTime
-						: minMediaTime({ a: bound, b: el.startTime }),
-				null,
-			);
+		const rightNeighborBound =
+			rippleEditingEnabled && isMainTrack
+				? null
+				: otherElements
+						.filter(
+							(el) =>
+								el.startTime >=
+								addMediaTime({ a: element.startTime, b: element.duration }),
+						)
+						.reduce<MediaTime | null>(
+							(bound, el) =>
+								bound === null
+									? el.startTime
+									: minMediaTime({ a: bound, b: el.startTime }),
+							null,
+						);
 
 		return [
 			{
@@ -225,6 +234,7 @@ export class ResizeController {
 		const members = buildResizeMembers({
 			tracks: this.config.getSceneTracks(),
 			selectedElements: activeSelection,
+			rippleEditingEnabled: this.config.rippleEditingEnabled,
 		});
 		if (members.length === 0) return;
 
@@ -342,7 +352,258 @@ export class ResizeController {
 		});
 
 		session.result = result;
-		this.config.previewElements(result.updates);
+
+		const tracks = this.config.getSceneTracks();
+		const allUpdates = [...result.updates];
+
+		if (this.config.rippleEditingEnabled) {
+			const mainMember = session.members.find(
+				(m) => m.trackId === tracks.main.id,
+			);
+			if (mainMember) {
+				const mainUpdate = result.updates.find(
+					(u) => u.elementId === mainMember.elementId,
+				);
+				if (session.side === "right") {
+					const newDuration = mainUpdate?.patch.duration ?? mainMember.duration;
+					const durationDelta = subMediaTime({
+						a: newDuration,
+						b: mainMember.duration,
+					});
+
+					if (durationDelta !== 0) {
+						const originalEndTime = addMediaTime({
+							a: mainMember.startTime,
+							b: mainMember.duration,
+						});
+
+						// 1. Shift subsequent clips on the main track
+						for (const el of tracks.main.elements) {
+							if (el.id === mainMember.elementId) continue;
+							if (el.startTime >= originalEndTime) {
+								const nextStart = maxMediaTime({
+									a: ZERO_MEDIA_TIME,
+									b: addMediaTime({ a: el.startTime, b: durationDelta }),
+								});
+								allUpdates.push({
+									trackId: tracks.main.id,
+									elementId: el.id,
+									patch: {
+										trimStart: el.trimStart,
+										trimEnd: el.trimEnd,
+										startTime: nextStart,
+										duration: el.duration,
+									},
+								});
+							}
+						}
+
+						// 2. Shift linked elements on overlay tracks above
+						for (const track of tracks.overlay) {
+							for (const el of track.elements) {
+								if (el.startTime >= originalEndTime) {
+									const nextStart = maxMediaTime({
+										a: ZERO_MEDIA_TIME,
+										b: addMediaTime({ a: el.startTime, b: durationDelta }),
+									});
+									allUpdates.push({
+										trackId: track.id,
+										elementId: el.id,
+										patch: {
+											trimStart: el.trimStart,
+											trimEnd: el.trimEnd,
+											startTime: nextStart,
+											duration: el.duration,
+										},
+									});
+								} else if (
+									durationDelta < 0 &&
+									el.startTime >
+										addMediaTime({ a: mainMember.startTime, b: newDuration })
+								) {
+									const nextStart = maxMediaTime({
+										a: mainMember.startTime,
+										b: addMediaTime({ a: el.startTime, b: durationDelta }),
+									});
+									allUpdates.push({
+										trackId: track.id,
+										elementId: el.id,
+										patch: {
+											trimStart: el.trimStart,
+											trimEnd: el.trimEnd,
+											startTime: nextStart,
+											duration: el.duration,
+										},
+									});
+								}
+							}
+						}
+
+						// 3. Shift linked elements on audio tracks
+						for (const track of tracks.audio) {
+							for (const el of track.elements) {
+								if (el.startTime >= originalEndTime) {
+									const nextStart = maxMediaTime({
+										a: ZERO_MEDIA_TIME,
+										b: addMediaTime({ a: el.startTime, b: durationDelta }),
+									});
+									allUpdates.push({
+										trackId: track.id,
+										elementId: el.id,
+										patch: {
+											trimStart: el.trimStart,
+											trimEnd: el.trimEnd,
+											startTime: nextStart,
+											duration: el.duration,
+										},
+									});
+								}
+							}
+						}
+					}
+				} else if (session.side === "left" && mainUpdate) {
+					// When trimming the start of a main track clip, prevent a gap by keeping
+					// the clip at its original start position and rippling subsequent elements left.
+					const shiftDelta = subMediaTime({
+						a: mainUpdate.patch.startTime,
+						b: mainMember.startTime,
+					});
+
+					if (shiftDelta > 0) {
+						mainUpdate.patch.startTime = mainMember.startTime;
+
+						const originalEndTime = addMediaTime({
+							a: mainMember.startTime,
+							b: mainMember.duration,
+						});
+
+						// 1. Shift subsequent clips on the main track
+						for (const el of tracks.main.elements) {
+							if (el.id === mainMember.elementId) continue;
+							if (el.startTime >= originalEndTime) {
+								const nextStart = maxMediaTime({
+									a: ZERO_MEDIA_TIME,
+									b: subMediaTime({ a: el.startTime, b: shiftDelta }),
+								});
+								allUpdates.push({
+									trackId: tracks.main.id,
+									elementId: el.id,
+									patch: {
+										trimStart: el.trimStart,
+										trimEnd: el.trimEnd,
+										startTime: nextStart,
+										duration: el.duration,
+									},
+								});
+							}
+						}
+
+						// 2. Shift linked elements on overlay tracks above
+						const trimmedCutoff = addMediaTime({
+							a: mainMember.startTime,
+							b: shiftDelta,
+						});
+						for (const track of tracks.overlay) {
+							for (const el of track.elements) {
+								if (el.startTime >= originalEndTime) {
+									const nextStart = maxMediaTime({
+										a: ZERO_MEDIA_TIME,
+										b: subMediaTime({ a: el.startTime, b: shiftDelta }),
+									});
+									allUpdates.push({
+										trackId: track.id,
+										elementId: el.id,
+										patch: {
+											trimStart: el.trimStart,
+											trimEnd: el.trimEnd,
+											startTime: nextStart,
+											duration: el.duration,
+										},
+									});
+								} else if (el.startTime >= trimmedCutoff) {
+									const nextStart = maxMediaTime({
+										a: mainMember.startTime,
+										b: subMediaTime({ a: el.startTime, b: shiftDelta }),
+									});
+									allUpdates.push({
+										trackId: track.id,
+										elementId: el.id,
+										patch: {
+											trimStart: el.trimStart,
+											trimEnd: el.trimEnd,
+											startTime: nextStart,
+											duration: el.duration,
+										},
+									});
+								} else if (el.startTime >= mainMember.startTime) {
+									allUpdates.push({
+										trackId: track.id,
+										elementId: el.id,
+										patch: {
+											trimStart: el.trimStart,
+											trimEnd: el.trimEnd,
+											startTime: mainMember.startTime,
+											duration: el.duration,
+										},
+									});
+								}
+							}
+						}
+
+						// 3. Shift linked elements on audio tracks
+						for (const track of tracks.audio) {
+							for (const el of track.elements) {
+								if (el.startTime >= originalEndTime) {
+									const nextStart = maxMediaTime({
+										a: ZERO_MEDIA_TIME,
+										b: subMediaTime({ a: el.startTime, b: shiftDelta }),
+									});
+									allUpdates.push({
+										trackId: track.id,
+										elementId: el.id,
+										patch: {
+											trimStart: el.trimStart,
+											trimEnd: el.trimEnd,
+											startTime: nextStart,
+											duration: el.duration,
+										},
+									});
+								} else if (el.startTime >= trimmedCutoff) {
+									const nextStart = maxMediaTime({
+										a: mainMember.startTime,
+										b: subMediaTime({ a: el.startTime, b: shiftDelta }),
+									});
+									allUpdates.push({
+										trackId: track.id,
+										elementId: el.id,
+										patch: {
+											trimStart: el.trimStart,
+											trimEnd: el.trimEnd,
+											startTime: nextStart,
+											duration: el.duration,
+										},
+									});
+								} else if (el.startTime >= mainMember.startTime) {
+									allUpdates.push({
+										trackId: track.id,
+										elementId: el.id,
+										patch: {
+											trimStart: el.trimStart,
+											trimEnd: el.trimEnd,
+											startTime: mainMember.startTime,
+											duration: el.duration,
+										},
+									});
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		session.result = { ...result, updates: allUpdates };
+		this.config.previewElements(allUpdates);
 	}
 
 	private handleMouseUp(): void {

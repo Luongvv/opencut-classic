@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
 	reactStrictMode: true,
 	productionBrowserSourceMaps: true,
 	output: "standalone",
+	webpack: (config) => {
+		config.experiments = {
+			...config.experiments,
+			asyncWebAssembly: true,
+			layers: true,
+		};
+		return config;
+	},
 	images: {
 		remotePatterns: [
 			{

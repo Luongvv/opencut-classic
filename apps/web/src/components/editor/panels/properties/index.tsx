@@ -18,6 +18,7 @@ import { EmptyView } from "./empty-view";
 export function PropertiesPanel() {
 	const editor = useEditor();
 	useEditor((e) => e.scenes.getActiveSceneOrNull());
+	useEditor((e) => e.timeline.getPreviewTracks());
 	useEditor((e) => e.media.getAssets());
 	const { selectedElements } = useElementSelection();
 	const { activeTabPerType, setActiveTab } = usePropertiesStore();
@@ -34,7 +35,7 @@ export function PropertiesPanel() {
 		return (
 			<div className="panel bg-background flex h-full flex-col items-center justify-center overflow-hidden rounded-sm border">
 				<p className="text-muted-foreground text-sm">
-					{selectedElements.length} elements selected.0
+					{selectedElements.length} elements selected.
 				</p>
 			</div>
 		);
@@ -44,6 +45,7 @@ export function PropertiesPanel() {
 
 	const elementsWithTracks = editor.timeline.getElementsWithTracks({
 		elements: selectedElements,
+		source: "preview",
 	});
 	const elementWithTrack = elementsWithTracks[0];
 

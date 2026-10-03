@@ -8,6 +8,7 @@ import {
 	PlayheadController,
 	type PlayheadConfig,
 } from "@/timeline/controllers/playhead-controller";
+import type { SnapPoint } from "@/timeline/snapping";
 import type { MediaTime } from "@/wasm";
 
 interface UseTimelinePlayheadProps {
@@ -16,6 +17,7 @@ interface UseTimelinePlayheadProps {
 	rulerScrollRef: React.RefObject<HTMLDivElement | null>;
 	tracksScrollRef: React.RefObject<HTMLDivElement | null>;
 	playheadRef?: React.RefObject<HTMLDivElement | null>;
+	onSnapPointChange?: (snapPoint: SnapPoint | null) => void;
 }
 
 export function useTimelinePlayhead({
@@ -24,6 +26,7 @@ export function useTimelinePlayhead({
 	rulerScrollRef,
 	tracksScrollRef,
 	playheadRef,
+	onSnapPointChange,
 }: UseTimelinePlayheadProps) {
 	const editor = useEditor();
 	const isShiftHeldRef = useShiftKey();
@@ -54,6 +57,7 @@ export function useTimelinePlayhead({
 					playheadTime,
 				},
 			}),
+		onSnapPointChange,
 	};
 	const configRef = useCommittedRef(config);
 	const [ctrl] = useState(() => new PlayheadController({ configRef }));

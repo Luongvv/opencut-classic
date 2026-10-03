@@ -328,6 +328,7 @@ export function Timeline() {
 			rulerScrollRef,
 			tracksScrollRef,
 			playheadRef,
+			onSnapPointChange: handleSnapPointChange,
 		});
 
 	const { isDragOver, dropTarget, dragProps } = useTimelineDragDrop({
@@ -403,10 +404,15 @@ export function Timeline() {
 		contentWidth: dynamicTimelineWidth,
 	});
 
+	const isScrubbing = useEditor((e) => e.playback.getIsScrubbing());
+
 	const showSnapIndicator =
 		snappingEnabled &&
 		currentSnapPoint !== null &&
-		(isElementDragging || bookmarkDragState.isDragging || isResizing);
+		(isElementDragging ||
+			bookmarkDragState.isDragging ||
+			isResizing ||
+			isScrubbing);
 
 	const {
 		handleTracksMouseDown,
@@ -583,6 +589,7 @@ export function Timeline() {
 						isSnappingToPlayhead={
 							showSnapIndicator && currentSnapPoint?.type === "playhead"
 						}
+						onSnapPointChange={handleSnapPointChange}
 					/>
 				</div>
 				<SnapIndicator
@@ -867,6 +874,32 @@ function TimelineTrackRows({
 								? "Show track"
 								: "Hide track"}
 						</ContextMenuItem>
+						{track.elements.length > 0 &&
+							(() => {
+								const isMain = track.id === mainTrackId;
+								const sorted = [...track.elements].sort(
+									(a, b) => a.startTime - b.startTime,
+								);
+								const hasGaps =
+									(isMain && sorted[0].startTime > 0) ||
+									sorted.some(
+										(el, i) =>
+											i < sorted.length - 1 &&
+											sorted[i + 1].startTime > el.startTime + el.duration,
+									);
+								if (!hasGaps) return null;
+								return (
+									<ContextMenuItem
+										icon={<HugeiconsIcon icon={Delete02Icon} />}
+										onClick={(event: React.MouseEvent) => {
+											event.stopPropagation();
+											timeline.deleteGapsOnTrack({ trackId: track.id });
+										}}
+									>
+										Xóa khoảng trống (Delete gaps)
+									</ContextMenuItem>
+								);
+							})()}
 						{track.id !== mainTrackId && (
 							<ContextMenuItem
 								icon={<HugeiconsIcon icon={Delete02Icon} />}

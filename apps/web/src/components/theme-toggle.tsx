@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "./ui/button";
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { cn } from "@/utils/ui";
 import { Sun03Icon } from "@hugeicons/core-free-icons";
@@ -18,6 +19,16 @@ export function ThemeToggle({
 	onToggle,
 }: ThemeToggleProps) {
 	const { theme, setTheme } = useTheme();
+	// The theme is unknown during SSR; only render theme-dependent text after
+	// mount so server and client markup match.
+	const [isMounted, setIsMounted] = useState(false);
+	useEffect(() => setIsMounted(true), []);
+
+	const label = !isMounted
+		? "Toggle theme"
+		: theme === "dark"
+			? "Light"
+			: "Dark";
 
 	return (
 		<Button
@@ -33,7 +44,7 @@ export function ThemeToggle({
 				icon={Sun03Icon}
 				className={cn("!size-[1.1rem]", iconClassName)}
 			/>
-			<span className="sr-only">{theme === "dark" ? "Light" : "Dark"}</span>
+			<span className="sr-only">{label}</span>
 		</Button>
 	);
 }

@@ -15,6 +15,7 @@ import {
 	roundMediaTime,
 	subMediaTime,
 } from "@/wasm";
+import { computeRippleAdjustments, applyRippleAdjustments } from "@/ripple";
 
 export class SplitElementsCommand extends Command {
 	private savedState: SceneTracks | null = null;
@@ -22,20 +23,24 @@ export class SplitElementsCommand extends Command {
 	private readonly elements: { trackId: string; elementId: string }[];
 	private readonly splitTime: MediaTime;
 	private readonly retainSide: "both" | "left" | "right";
+	private readonly ripple: boolean;
 
 	constructor({
 		elements,
 		splitTime,
 		retainSide = "both",
+		ripple = false,
 	}: {
 		elements: { trackId: string; elementId: string }[];
 		splitTime: MediaTime;
 		retainSide?: "both" | "left" | "right";
+		ripple?: boolean;
 	}) {
 		super();
 		this.elements = elements;
 		this.splitTime = splitTime;
 		this.retainSide = retainSide;
+		this.ripple = ripple;
 	}
 
 	getRightSideElements(): { trackId: string; elementId: string }[] {
@@ -197,7 +202,45 @@ export class SplitElementsCommand extends Command {
 			audio: this.savedState.audio.map((track) => splitTrack(track)),
 		};
 
-		editor.timeline.updateTracks(updatedTracks);
+		let finalTracks = updatedTracks;
+
+		if (this.ripple && this.retainSide !== "both") {
+			const adjustments = computeRippleAdjustments({
+				beforeTracks: this.savedState,
+				afterTracks: updatedTracks,
+			});
+
+			if (adjustments.length > 0) {
+				const allAdjustments = [...adjustments];
+
+				// Propagate main track ripple to overlay and audio tracks
+				for (const adj of adjustments) {
+					if (adj.trackId === this.savedState.main.id) {
+						for (const overlayTrack of this.savedState.overlay) {
+							allAdjustments.push({
+								trackId: overlayTrack.id,
+								afterTime: adj.afterTime,
+								shiftAmount: adj.shiftAmount,
+							});
+						}
+						for (const audioTrack of this.savedState.audio) {
+							allAdjustments.push({
+								trackId: audioTrack.id,
+								afterTime: adj.afterTime,
+								shiftAmount: adj.shiftAmount,
+							});
+						}
+					}
+				}
+
+				finalTracks = applyRippleAdjustments({
+					tracks: updatedTracks,
+					adjustments: allAdjustments,
+				});
+			}
+		}
+
+		editor.timeline.updateTracks(finalTracks);
 
 		if (this.rightSideElements.length > 0) {
 			return createElementSelectionResult(this.rightSideElements);

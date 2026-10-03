@@ -259,9 +259,10 @@ export function useEditorActions() {
 				elements: elementsToSplit,
 				splitTime: currentTime,
 				retainSide: "right",
+				ripple: true,
 			});
 
-			if (rippleEditingEnabled && rightSideElements.length > 0) {
+			if (rightSideElements.length > 0) {
 				const firstRightElement = editor.timeline.getElementsWithTracks({
 					elements: [rightSideElements[0]],
 				})[0];
@@ -288,10 +289,15 @@ export function useEditorActions() {
 
 			if (elementsToSplit.length === 0) return;
 
+			const hasMainTrackElement = elementsToSplit.some(
+				(el) => el.trackId === tracks.main.id,
+			);
+
 			editor.timeline.splitElements({
 				elements: elementsToSplit,
 				splitTime: currentTime,
 				retainSide: "left",
+				ripple: rippleEditingEnabled || hasMainTrackElement,
 			});
 		},
 		undefined,
@@ -325,6 +331,7 @@ export function useEditorActions() {
 					}
 					editor.timeline.deleteElements({
 						elements: selectedElements,
+						ripple: rippleEditingEnabled,
 					});
 					return;
 				default:

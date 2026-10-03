@@ -106,18 +106,167 @@ function resolveExistingTrackMove({
 		}),
 	}));
 
-	if (!canApplyMovesToExistingTracks({ tracks, moves })) {
-		return null;
+	let finalMoves = moves;
+
+	if (!canApplyMovesToExistingTracks({ tracks, moves: finalMoves })) {
+		// If moves involve main track, attempt sequence reordering / insert resolution
+		const mainTrackMoves = moves.filter(
+			(m) => m.targetTrackId === tracks.main.id,
+		);
+		if (mainTrackMoves.length > 0) {
+			const reordered = resolveMainTrackReorderMoves({
+				tracks,
+				moves,
+			});
+			if (
+				reordered &&
+				canApplyMovesToExistingTracks({ tracks, moves: reordered })
+			) {
+				finalMoves = reordered;
+			} else {
+				return null;
+			}
+		} else {
+			return null;
+		}
 	}
 
 	return {
-		moves,
+		moves: finalMoves,
 		createTracks: [],
-		targetSelection: moves.map(({ elementId, targetTrackId }) => ({
-			trackId: targetTrackId,
-			elementId,
+		targetSelection: group.members.map((member) => ({
+			trackId:
+				targetTrackIdsByElementId.get(member.elementId) ?? member.trackId,
+			elementId: member.elementId,
 		})),
 	};
+}
+
+function resolveMainTrackReorderMoves({
+	tracks,
+	moves,
+}: {
+	tracks: SceneTracks;
+	moves: PlannedElementMove[];
+}): PlannedElementMove[] | null {
+	const mainTrack = tracks.main;
+	const movingMainMoves = moves.filter(
+		(m) => m.targetTrackId === mainTrack.id,
+	);
+	if (movingMainMoves.length === 0) return null;
+
+	const movingElementIds = new Set(movingMainMoves.map((m) => m.elementId));
+
+	// All stationary elements on main track sorted by startTime
+	const stationaryElements = [...mainTrack.elements]
+		.filter((el) => !movingElementIds.has(el.id))
+		.sort((a, b) => a.startTime - b.startTime);
+
+	// Get source elements for moving elements to know their durations
+	const displayTracks = getDisplayTracks({ tracks });
+	const allElementsMap = new Map(
+		displayTracks.flatMap((t) => t.elements.map((el) => [el.id, el] as const)),
+	);
+
+	const primaryMove = movingMainMoves[0];
+	const movingElement = allElementsMap.get(primaryMove.elementId);
+	if (!movingElement) return null;
+
+	const requestedStart = primaryMove.newStartTime;
+
+	// Find insertion position among stationary elements based on midpoints
+	let insertIndex = stationaryElements.length;
+	for (let i = 0; i < stationaryElements.length; i++) {
+		const s = stationaryElements[i];
+		const midPoint = s.startTime + s.duration / 2;
+		if (requestedStart < midPoint) {
+			insertIndex = i;
+			break;
+		}
+	}
+
+	// Build new ordered sequence of all elements on the main track
+	type ElementItem = {
+		id: string;
+		duration: MediaTime;
+		isMoving: boolean;
+		originalTrackId: string;
+	};
+	const sequence: ElementItem[] = [];
+
+	for (let i = 0; i < stationaryElements.length; i++) {
+		if (i === insertIndex) {
+			for (const m of movingMainMoves) {
+				const el = allElementsMap.get(m.elementId);
+				if (el) {
+					sequence.push({
+						id: el.id,
+						duration: el.duration,
+						isMoving: true,
+						originalTrackId: m.sourceTrackId,
+					});
+				}
+			}
+		}
+		const s = stationaryElements[i];
+		sequence.push({
+			id: s.id,
+			duration: s.duration,
+			isMoving: false,
+			originalTrackId: mainTrack.id,
+		});
+	}
+
+	if (insertIndex >= stationaryElements.length) {
+		for (const m of movingMainMoves) {
+			const el = allElementsMap.get(m.elementId);
+			if (el) {
+				sequence.push({
+					id: el.id,
+					duration: el.duration,
+					isMoving: true,
+					originalTrackId: m.sourceTrackId,
+				});
+			}
+		}
+	}
+
+	// Compute sequential start times starting from ZERO_MEDIA_TIME
+	let currentOffset = ZERO_MEDIA_TIME;
+	const newMoves: PlannedElementMove[] = [];
+
+	for (const item of sequence) {
+		const newStartTime = currentOffset;
+		currentOffset = addMediaTime({ a: currentOffset, b: item.duration });
+
+		if (item.isMoving) {
+			newMoves.push({
+				sourceTrackId: item.originalTrackId,
+				targetTrackId: mainTrack.id,
+				elementId: item.id,
+				newStartTime,
+			});
+		} else {
+			const original = stationaryElements.find((s) => s.id === item.id);
+			if (original && original.startTime !== newStartTime) {
+				newMoves.push({
+					sourceTrackId: mainTrack.id,
+					targetTrackId: mainTrack.id,
+					elementId: item.id,
+					newStartTime,
+				});
+			}
+		}
+	}
+
+	// Include any non-main moves from original group moves
+	for (const m of moves) {
+		if (m.targetTrackId !== mainTrack.id) {
+			newMoves.push(m);
+		}
+	}
+
+	return newMoves;
 }
 
 function resolveNewTrackMove({

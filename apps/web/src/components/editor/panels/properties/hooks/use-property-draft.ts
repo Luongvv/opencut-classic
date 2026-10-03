@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { evaluateMathExpression } from "@/utils/math";
 
 function looksLikeExpression({ input }: { input: string }): boolean {
@@ -26,6 +26,19 @@ export function usePropertyDraft<T>({
 }) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [draft, setDraft] = useState("");
+
+	const isEditingRef = useRef(isEditing);
+	isEditingRef.current = isEditing;
+	const commitRef = useRef(onCommit);
+	commitRef.current = onCommit;
+
+	useEffect(() => {
+		return () => {
+			if (isEditingRef.current) {
+				commitRef.current();
+			}
+		};
+	}, []);
 
 	return {
 		displayValue: isEditing ? draft : sourceDisplay,

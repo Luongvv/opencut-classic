@@ -22,7 +22,8 @@
 			"@/*": ["./src/*"],
 			"content-collections": ["./.content-collections/generated"]
 		},
-		"forceConsistentCasingInFileNames": true
+		"forceConsistentCasingInFileNames": true,
+		"types": ["bun-types"]
 	},
 	"include": [
 		"**/*.ts",
@@ -31,7 +32,6 @@
 		"next-env.d.ts",
 		".next/types/**/*.ts",
 		"src/types/**/*.d.ts",
-		"../../use-frame-cache.ts",
 		"src/stores/timeline-store.ts",
 		".next/dev/types/**/*.ts"
 	],

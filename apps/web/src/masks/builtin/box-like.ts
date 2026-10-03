@@ -36,6 +36,7 @@ export const BOX_LIKE_MASK_PARAMS: ParamDefinition<
 		default: 0,
 		min: -100,
 		max: 100,
+		slider: { min: -100, max: 100 },
 		...PERCENTAGE_DISPLAY,
 	},
 	{
@@ -45,6 +46,7 @@ export const BOX_LIKE_MASK_PARAMS: ParamDefinition<
 		default: 0,
 		min: -100,
 		max: 100,
+		slider: { min: -100, max: 100 },
 		...PERCENTAGE_DISPLAY,
 	},
 	{
@@ -53,6 +55,7 @@ export const BOX_LIKE_MASK_PARAMS: ParamDefinition<
 		type: "number",
 		default: 0.6,
 		min: 1,
+		slider: { min: 1, max: 100 },
 		...PERCENTAGE_DISPLAY,
 	},
 	{
@@ -61,6 +64,7 @@ export const BOX_LIKE_MASK_PARAMS: ParamDefinition<
 		type: "number",
 		default: 0.6,
 		min: 1,
+		slider: { min: 1, max: 100 },
 		...PERCENTAGE_DISPLAY,
 	},
 	{
@@ -71,6 +75,7 @@ export const BOX_LIKE_MASK_PARAMS: ParamDefinition<
 		min: 0,
 		max: 360,
 		step: 1,
+		slider: { min: 0, max: 360 },
 	},
 	{
 		key: "scale",
@@ -79,6 +84,7 @@ export const BOX_LIKE_MASK_PARAMS: ParamDefinition<
 		default: 1,
 		min: 1,
 		max: 500,
+		slider: { min: 1, max: 100 },
 		...PERCENTAGE_DISPLAY,
 	},
 	{

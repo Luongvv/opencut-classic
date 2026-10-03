@@ -12,6 +12,12 @@ export class SaveManager {
 	private saveTimer: ReturnType<typeof setTimeout> | null = null;
 	private unsubscribeHandlers: Array<() => void> = [];
 
+	private diskSaveStatus: "idle" | "saving" | "saved" | "error" = "idle";
+	private lastSavedToDiskAt: Date | null = null;
+	private lastSavedDiskPath: string | null = null;
+	private diskErrorMessage: string | null = null;
+	private listeners = new Set<() => void>();
+
 	constructor({
 		editor,
 		debounceMs = 800,
@@ -23,6 +29,37 @@ export class SaveManager {
 	}
 
 	private editor: EditorCore;
+
+	subscribe(listener: () => void): () => void {
+		this.listeners.add(listener);
+		return () => {
+			this.listeners.delete(listener);
+		};
+	}
+
+	private notify(): void {
+		for (const listener of this.listeners) {
+			try {
+				listener();
+			} catch (e) {
+				console.error("SaveManager listener error:", e);
+			}
+		}
+	}
+
+	getDiskSaveStatus(): {
+		status: "idle" | "saving" | "saved" | "error";
+		lastSavedAt: Date | null;
+		filePath: string | null;
+		error: string | null;
+	} {
+		return {
+			status: this.diskSaveStatus,
+			lastSavedAt: this.lastSavedToDiskAt,
+			filePath: this.lastSavedDiskPath,
+			error: this.diskErrorMessage,
+		};
+	}
 
 	start(): void {
 		if (this.unsubscribeHandlers.length > 0) return;
@@ -81,11 +118,37 @@ export class SaveManager {
 		}, this.debounceMs);
 	}
 
+	async syncDiskNow(): Promise<void> {
+		const active = this.editor.project.getActive();
+		if (!active) return;
+
+		this.diskSaveStatus = "saving";
+		this.notify();
+
+		try {
+			const syncRes = await this.editor.project.syncProjectToLocalDisk(active);
+			if (syncRes.success) {
+				this.diskSaveStatus = "saved";
+				this.lastSavedToDiskAt = new Date();
+				this.lastSavedDiskPath = syncRes.filePath ?? null;
+				this.diskErrorMessage = null;
+			} else {
+				this.diskSaveStatus = "error";
+				this.diskErrorMessage = syncRes.error ?? "Failed to sync";
+			}
+		} catch (err) {
+			this.diskSaveStatus = "error";
+			this.diskErrorMessage = err instanceof Error ? err.message : "Sync error";
+		} finally {
+			this.notify();
+		}
+	}
+
 	private async saveNow(): Promise<void> {
 		if (this.isSaving) return;
 		if (!this.hasPendingSave) return;
 
-		const activeProject = this.editor.project.getActive();
+		const activeProject = this.editor.project.getActiveOrNull();
 		if (!activeProject) return;
 		if (this.editor.project.getIsLoading()) return;
 		if (this.editor.project.getMigrationState().isMigrating) return;
@@ -96,6 +159,30 @@ export class SaveManager {
 
 		try {
 			await this.editor.project.saveCurrentProject();
+
+			// Tự động đồng bộ ra ổ đĩa máy tính
+			this.diskSaveStatus = "saving";
+			this.notify();
+
+			const latestActive = this.editor.project.getActiveOrNull();
+			if (latestActive) {
+				const syncRes = await this.editor.project.syncProjectToLocalDisk(latestActive);
+				if (syncRes.success) {
+					this.diskSaveStatus = "saved";
+					this.lastSavedToDiskAt = new Date();
+					this.lastSavedDiskPath = syncRes.filePath ?? null;
+					this.diskErrorMessage = null;
+				} else {
+					this.diskSaveStatus = "error";
+					this.diskErrorMessage = syncRes.error ?? "Sync to disk failed";
+				}
+				this.notify();
+			}
+		} catch (error) {
+			console.error("SaveManager save error:", error);
+			this.diskSaveStatus = "error";
+			this.diskErrorMessage = error instanceof Error ? error.message : "Save error";
+			this.notify();
 		} finally {
 			this.isSaving = false;
 			if (this.hasPendingSave) {

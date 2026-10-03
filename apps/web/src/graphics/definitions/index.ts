@@ -3,6 +3,9 @@ import { ellipseGraphicDefinition } from "./ellipse";
 import { polygonGraphicDefinition } from "./polygon";
 import { rectangleGraphicDefinition } from "./rectangle";
 import { starGraphicDefinition } from "./star";
+// Imported directly (not via "@/templates") to avoid pulling the template
+// builder into the graphics module and creating an import cycle.
+import { registerStorytellingGraphics } from "@/templates/storytelling-smart-cut/graphics";
 
 const defaultGraphicDefinitions = [
 	rectangleGraphicDefinition,
@@ -21,6 +24,9 @@ export function registerDefaultGraphics(): void {
 			definition,
 		});
 	}
+	// Template graphics must be resolvable whenever a saved project is opened,
+	// not only at the moment the template project is created.
+	registerStorytellingGraphics();
 }
 
 export {

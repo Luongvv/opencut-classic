@@ -192,6 +192,8 @@ export interface NumberParamDefinition<TKey extends string = string>
 	displayMultiplier?: number;
 	/** Show as percentage of max. min/max/step/default stay in stored space. */
 	unit?: "percent";
+	/** Soft boundaries for the UI slider. Does not affect validation. */
+	slider?: { min: number; max: number; curve?: "linear" | "log" };
 	/** Short label shown as the scrub handle icon in the number field (e.g. "W", "R"). */
 	shortLabel?: string;
 }

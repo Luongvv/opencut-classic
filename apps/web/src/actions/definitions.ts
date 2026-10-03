@@ -208,3 +208,14 @@ export function getDefaultShortcuts(): Map<
 
 	return shortcuts;
 }
+
+const NON_OPTIONAL_ARGS_ACTIONS = new Set<string>([
+	"remove-media-asset",
+	"remove-media-assets",
+]);
+
+export function isActionWithOptionalArgs(
+	action: string,
+): action is TActionWithOptionalArgs {
+	return action in ACTIONS && !NON_OPTIONAL_ARGS_ACTIONS.has(action);
+}

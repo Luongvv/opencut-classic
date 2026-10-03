@@ -39,13 +39,54 @@ function buildFallbackPreviewUrl({
 	return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
+const warnedMissingGraphicIds = new Set<string>();
+
+function buildMissingGraphicDefinition({
+	definitionId,
+}: {
+	definitionId: string;
+}): GraphicDefinition {
+	return {
+		id: definitionId,
+		name: `Missing: ${definitionId}`,
+		keywords: [],
+		params: [],
+		render({ ctx, width, height }) {
+			ctx.clearRect(0, 0, width, height);
+			ctx.save();
+			ctx.strokeStyle = "rgba(255, 80, 80, 0.9)";
+			ctx.lineWidth = Math.max(2, Math.min(width, height) * 0.02);
+			ctx.setLineDash([8, 6]);
+			ctx.strokeRect(0, 0, width, height);
+			ctx.beginPath();
+			ctx.moveTo(0, 0);
+			ctx.lineTo(width, height);
+			ctx.moveTo(width, 0);
+			ctx.lineTo(0, height);
+			ctx.stroke();
+			ctx.restore();
+		},
+	};
+}
+
 export function getGraphicDefinition({
 	definitionId,
 }: {
 	definitionId: string;
 }): GraphicDefinition {
 	registerDefaultGraphics();
-	return graphicsRegistry.get(definitionId);
+	if (graphicsRegistry.has(definitionId)) {
+		return graphicsRegistry.get(definitionId);
+	}
+	// A saved project may reference a graphic that is no longer registered.
+	// Render a placeholder instead of crashing the whole editor.
+	if (!warnedMissingGraphicIds.has(definitionId)) {
+		warnedMissingGraphicIds.add(definitionId);
+		console.warn(
+			`[graphics] Unknown graphic "${definitionId}" — rendering placeholder.`,
+		);
+	}
+	return buildMissingGraphicDefinition({ definitionId });
 }
 
 export function buildDefaultGraphicInstance({

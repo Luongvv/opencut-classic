@@ -13,23 +13,44 @@ export function useFontAtlas({ open }: { open: boolean }) {
 	const [atlas, setAtlas] = useState<FontAtlas | null>(() =>
 		getCachedFontAtlas(),
 	);
+	const [systemFonts, setSystemFonts] = useState<string[]>([]);
 	const [status, setStatus] = useState<Status>(() =>
 		getCachedFontAtlas() ? "idle" : "loading",
 	);
 
 	useEffect(() => {
-		if (!open || atlas) return;
+		if (!open) return;
 
-		setStatus("loading");
-		loadFontAtlas().then((data) => {
-			if (data) {
-				setAtlas(data);
-				setStatus("idle");
-			} else {
-				setStatus("error");
-			}
-		});
-	}, [open, atlas]);
+		let isMounted = true;
+		if (!atlas) {
+			setStatus("loading");
+			loadFontAtlas().then((data) => {
+				if (!isMounted) return;
+				if (data) {
+					setAtlas(data);
+					setStatus(prev => prev === "loading" ? "idle" : prev);
+				} else {
+					setStatus("error");
+				}
+			});
+		}
+
+		if (systemFonts.length === 0) {
+			fetch("/api/fonts/system")
+				.then((r) => r.json())
+				.then((data) => {
+					if (!isMounted) return;
+					if (data.fonts) {
+						setSystemFonts(data.fonts.map((f: any) => f.family));
+					}
+				})
+				.catch(() => {});
+		}
+
+		return () => {
+			isMounted = false;
+		};
+	}, [open, atlas, systemFonts.length]);
 
 	const retry = useCallback(() => {
 		clearFontAtlasCache();
@@ -46,8 +67,13 @@ export function useFontAtlas({ open }: { open: boolean }) {
 
 	const fontNames = useMemo(() => {
 		if (!atlas) return [];
-		return [...Object.keys(atlas.fonts), ...SYSTEM_FONTS].sort();
-	}, [atlas]);
+		const names = new Set([
+			...Object.keys(atlas.fonts),
+			...SYSTEM_FONTS,
+			...systemFonts,
+		]);
+		return Array.from(names).sort();
+	}, [atlas, systemFonts]);
 
 	return { atlas, status, fontNames, retry };
 }

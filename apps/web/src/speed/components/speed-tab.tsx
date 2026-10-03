@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { useEditor } from "@/editor/use-editor";
 import { NumberField } from "@/components/ui/number-field";
+import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { DashboardSpeed02Icon } from "@hugeicons/core-free-icons";
@@ -116,28 +117,50 @@ export function SpeedTab({
 			<SectionContent>
 				<SectionFields>
 					<SectionField label="Speed">
-						<NumberField
-							icon={<HugeiconsIcon icon={DashboardSpeed02Icon} />}
-							value={speedDraft.displayValue}
-							suffix="x"
-							scrubRanges={[
-								{ from: 0.01, to: 1, pixelsPerUnit: 160 },
-								{ from: 1, to: 5, pixelsPerUnit: 48 },
-							]}
-							scrubClamp={{ min: MIN_RETIME_RATE, max: MAX_RETIME_RATE }}
-							onFocus={() => {
-								pendingRateRef.current = rate;
-								speedDraft.onFocus();
-							}}
-							onChange={speedDraft.onChange}
-							onBlur={speedDraft.onBlur}
-							onScrub={speedDraft.scrubTo}
-							onScrubEnd={speedDraft.commitScrub}
-							onReset={() =>
-								commitRetime({ rate: DEFAULT_RETIME_RATE, maintainPitch })
-							}
-							isDefault={rate === DEFAULT_RETIME_RATE}
-						/>
+						<div className="flex w-full items-center gap-3">
+							<div className="flex-1 px-1">
+								<Slider
+									min={0.1}
+									max={5}
+									step={0.05}
+									value={[rate]}
+									onValueChange={([val]) => {
+										pendingRateRef.current = val;
+										speedDraft.scrubTo(val);
+									}}
+									onValueCommit={([val]) => {
+										pendingRateRef.current = val;
+										commitRetime({ rate: val, maintainPitch });
+									}}
+								/>
+							</div>
+							<div className="shrink-0 flex items-center">
+								<NumberField
+									className="w-16"
+									icon={<HugeiconsIcon icon={DashboardSpeed02Icon} />}
+									value={speedDraft.displayValue}
+									step={0.1}
+									suffix="x"
+									scrubRanges={[
+										{ from: 0.01, to: 1, pixelsPerUnit: 160 },
+										{ from: 1, to: 5, pixelsPerUnit: 48 },
+									]}
+									scrubClamp={{ min: MIN_RETIME_RATE, max: MAX_RETIME_RATE }}
+									onFocus={() => {
+										pendingRateRef.current = rate;
+										speedDraft.onFocus();
+									}}
+									onChange={speedDraft.onChange}
+									onBlur={speedDraft.onBlur}
+									onScrub={speedDraft.scrubTo}
+									onScrubEnd={speedDraft.commitScrub}
+									onReset={() =>
+										commitRetime({ rate: DEFAULT_RETIME_RATE, maintainPitch })
+									}
+									isDefault={rate === DEFAULT_RETIME_RATE}
+								/>
+							</div>
+						</div>
 					</SectionField>
 					<div className="flex items-center justify-between">
 						<span className="text-sm">Change pitch</span>

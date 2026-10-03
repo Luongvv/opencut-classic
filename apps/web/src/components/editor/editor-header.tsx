@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "../ui/button";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -14,6 +14,7 @@ import { RenameProjectDialog } from "@/project/components/rename-project-dialog"
 import { DeleteProjectDialog } from "@/project/components/delete-project-dialog";
 import { useRouter } from "next/navigation";
 import { FaDiscord } from "react-icons/fa6";
+import { Download, HardDrive } from "lucide-react";
 import { ExportButton } from "./export-button";
 import { FeedbackPopover } from "@/feedback/components/feedback-popover";
 import { ThemeToggle } from "../theme-toggle";
@@ -27,12 +28,83 @@ import { ShortcutsDialog } from "@/actions/components/shortcuts-dialog";
 import Image from "next/image";
 import { cn } from "@/utils/ui";
 
+function AutoSaveStatusBadge() {
+	const editor = useEditor();
+	const diskSave = useEditor((e) => e.save.getDiskSaveStatus());
+
+	const handleManualSync = async () => {
+		toast.info("Đang đồng bộ ra ổ đĩa máy tính...");
+		await editor.save.syncDiskNow();
+	};
+
+	if (diskSave.status === "saving") {
+		return (
+			<div className="flex items-center gap-1.5 text-xs text-muted-foreground px-2 py-1 rounded bg-muted/40 animate-pulse select-none">
+				<span className="size-2 rounded-full bg-amber-500" />
+				<span className="hidden sm:inline">Đang lưu máy...</span>
+			</div>
+		);
+	}
+
+	if (diskSave.status === "error") {
+		return (
+			<button
+				type="button"
+				onClick={handleManualSync}
+				title={`Lỗi lưu: ${diskSave.error || "Không thể ghi file"}\nClick để thử lưu lại`}
+				className="flex items-center gap-1 text-xs text-destructive px-2 py-1 rounded hover:bg-destructive/10 cursor-pointer"
+			>
+				<span>⚠️ Thử lưu lại</span>
+			</button>
+		);
+	}
+
+	if (diskSave.lastSavedAt) {
+		const timeStr = diskSave.lastSavedAt.toLocaleTimeString([], {
+			hour: "2-digit",
+			minute: "2-digit",
+			second: "2-digit",
+		});
+		return (
+			<button
+				type="button"
+				onClick={handleManualSync}
+				title={`Đã tự động lưu vào:\n${diskSave.filePath || "~/OpenCut_Projects/"}\n(Click để đồng bộ lại ngay bây giờ)`}
+				className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted/60 transition-colors cursor-pointer select-none"
+			>
+				<HardDrive className="size-3.5 text-emerald-500" />
+				<span className="hidden sm:inline font-medium">Đã lưu máy</span>
+				<span className="text-[11px] font-mono opacity-80">{timeStr}</span>
+			</button>
+		);
+	}
+
+	return null;
+}
+
 export function EditorHeader() {
+	const editor = useEditor();
+
+	useEffect(() => {
+		const handleKeyDown = (e: globalThis.KeyboardEvent) => {
+			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+				e.preventDefault();
+				void editor.save.flush();
+				void editor.save.syncDiskNow();
+				toast.success("Đã kích hoạt lưu ra ổ đĩa máy tính!");
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [editor]);
+
 	return (
 		<header className="bg-background flex h-[3.4rem] items-center justify-between px-3 pt-0.5">
-			<div className="flex items-center gap-1">
+			<div className="flex items-center gap-2">
 				<ProjectDropdown />
 				<EditableProjectName />
+				<AutoSaveStatusBadge />
 			</div>
 			<nav className="flex items-center gap-2">
 				<FeedbackPopover />
@@ -50,7 +122,7 @@ function ProjectDropdown() {
 	const [isExiting, setIsExiting] = useState(false);
 	const router = useRouter();
 	const editor = useEditor();
-	const activeProject = useEditor((e) => e.project.getActive());
+	const activeProject = useEditor((e) => e.project.getActiveOrNull());
 
 	const handleExit = async () => {
 		if (isExiting) return;
@@ -131,6 +203,24 @@ function ProjectDropdown() {
 					</DropdownMenuItem>
 
 					<DropdownMenuItem
+						onClick={() => editor.project.downloadProjectJson()}
+						icon={<Download className="size-4" />}
+					>
+						Lưu tệp ra máy (.json)
+					</DropdownMenuItem>
+
+					<DropdownMenuItem
+						onClick={async () => {
+							toast.info("Đang đồng bộ ra E:\\Lương\\OpenCut_Projects...");
+							await editor.save.syncDiskNow();
+							toast.success("Đã đồng bộ ra ổ đĩa máy tính thành công!");
+						}}
+						icon={<HardDrive className="size-4" />}
+					>
+						Đồng bộ ra ổ E:
+					</DropdownMenuItem>
+
+					<DropdownMenuItem
 						onClick={() => setOpenDialog("shortcuts")}
 						icon={<HugeiconsIcon icon={CommandIcon} />}
 					>
@@ -172,7 +262,7 @@ function ProjectDropdown() {
 
 function EditableProjectName() {
 	const editor = useEditor();
-	const activeProject = useEditor((e) => e.project.getActive());
+	const activeProject = useEditor((e) => e.project.getActiveOrNull());
 	const [isEditing, setIsEditing] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const originalNameRef = useRef("");
@@ -229,8 +319,11 @@ function EditableProjectName() {
 		}
 	};
 
+	if (!activeProject) return null;
+
 	return (
 		<input
+			key={activeProject.metadata.id}
 			ref={inputRef}
 			type="text"
 			defaultValue={projectName}

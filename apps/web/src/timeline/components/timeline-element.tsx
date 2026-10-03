@@ -575,9 +575,9 @@ function ElementInner({
 						isExpanded && "bg-background",
 					)}
 				>
-					<button
-						type="button"
-						tabIndex={-1}
+					{/* Must not be a <button>: it contains EffectsButton and keyframe <button>s, and nested buttons are invalid HTML */}
+					{/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- mouse-only gesture surface (was tabIndex=-1); keyboard selection is via timeline shortcuts. */}
+					<div
 						className="absolute inset-0 size-full flex flex-col"
 						onClick={(event) => onElementClick({ event, element })}
 						onMouseDown={(event) => onElementMouseDown({ event, element })}
@@ -599,7 +599,7 @@ function ElementInner({
 							</div>
 						</div>
 						{expandedContent}
-					</button>
+					</div>
 				</div>
 			</div>
 

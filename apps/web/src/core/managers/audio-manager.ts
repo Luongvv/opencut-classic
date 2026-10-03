@@ -459,11 +459,14 @@ export class AudioManager {
 	}: {
 		clip: AudioClipSource;
 	}): boolean {
+		const rate = clip.retime?.rate ?? 1;
+		const hasRetime = Math.abs(rate - 1) > 0.001;
 		return (
 			this.hasCurveRetime({ clip }) ||
 			hasAnimatedVolume({ element: clip.timelineElement }) ||
+			hasRetime ||
 			shouldMaintainPitch({
-				rate: clip.retime?.rate ?? 1,
+				rate,
 				maintainPitch: clip.retime?.maintainPitch,
 			})
 		);

@@ -32,6 +32,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NumberField } from "@/components/ui/number-field";
+import { Slider } from "@/components/ui/slider";
 import {
 	Select,
 	SelectContent,
@@ -146,7 +147,6 @@ export function MasksTab({ element, trackId }: MasksTabProps) {
 	const masks = element.masks ?? [];
 	const renderMasks = renderElement.masks ?? masks;
 	const hasMask = masks.length > 0;
-	const { onPointerLeave, onOpenChange, markCommitted } = useMenuPreview();
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const elementBounds = useMemo(() => {
 		const clampedTime = Math.min(
@@ -178,16 +178,15 @@ export function MasksTab({ element, trackId }: MasksTabProps) {
 	const handleDropdownOpenChange = (open: boolean) => {
 		if (hasMask && open) return;
 		setIsDropdownOpen(open);
-		onOpenChange(open);
 	};
 
-	const previewMask = ({ maskType }: { maskType: MaskType }) => {
-		editor.timeline.previewElements({
+	const commitMask = ({ maskType }: { maskType: MaskType }) => {
+		editor.timeline.updateElements({
 			updates: [
 				{
 					trackId,
 					elementId: element.id,
-					updates: {
+					patch: {
 						masks: [
 							buildDefaultMaskInstance({
 								maskType,
@@ -203,35 +202,6 @@ export function MasksTab({ element, trackId }: MasksTabProps) {
 				},
 			],
 		});
-	};
-
-	const commitMask = ({ maskType }: { maskType: MaskType }) => {
-		if (editor.timeline.isPreviewActive()) {
-			editor.timeline.commitPreview();
-		} else {
-			editor.timeline.updateElements({
-				updates: [
-					{
-						trackId,
-						elementId: element.id,
-						patch: {
-							masks: [
-								buildDefaultMaskInstance({
-									maskType,
-									elementSize: elementBounds
-										? {
-												width: elementBounds.width,
-												height: elementBounds.height,
-											}
-										: undefined,
-								}),
-							],
-						} as Partial<MaskableElement>,
-					},
-				],
-			});
-		}
-		markCommitted();
 		setIsDropdownOpen(false);
 	};
 
@@ -285,13 +255,10 @@ export function MasksTab({ element, trackId }: MasksTabProps) {
 							</Button>
 						</DropdownMenuTrigger>
 					)}
-					<DropdownMenuContent className="w-40" onPointerLeave={onPointerLeave}>
+					<DropdownMenuContent className="w-40">
 						{maskDefs.map((definition) => (
 							<DropdownMenuItem
 								key={definition.type}
-								onPointerEnter={() =>
-									previewMask({ maskType: definition.type })
-								}
 								onClick={() => commitMask({ maskType: definition.type })}
 							>
 								<HugeiconsIcon {...definition.icon} />
@@ -432,10 +399,9 @@ function MaskParamsFields({
 			{definition.features.hasPosition &&
 				"centerX" in mask.params &&
 				"centerY" in mask.params && (
-					<SectionField label="Position">
-						<div className="flex items-center gap-2">
+					<>
+						<SectionField label="Position X">
 							<MaskNumberField
-								className="flex-1"
 								icon="X"
 								param={getNumberParamDefinition({
 									definition,
@@ -448,8 +414,9 @@ function MaskParamsFields({
 								onPreview={previewNumberParam("centerX")}
 								onCommit={onCommit}
 							/>
+						</SectionField>
+						<SectionField label="Position Y">
 							<MaskNumberField
-								className="flex-1"
 								icon="Y"
 								param={getNumberParamDefinition({
 									definition,
@@ -462,17 +429,16 @@ function MaskParamsFields({
 								onPreview={previewNumberParam("centerY")}
 								onCommit={onCommit}
 							/>
-						</div>
-					</SectionField>
+						</SectionField>
+					</>
 				)}
 
 			{definition.features.sizeMode === "width-height" &&
 				"width" in mask.params &&
 				"height" in mask.params && (
-					<SectionField label="Size">
-						<div className="flex items-center gap-2">
+					<>
+						<SectionField label="Width">
 							<MaskNumberField
-								className="flex-1"
 								icon="W"
 								param={getNumberParamDefinition({
 									definition,
@@ -485,8 +451,9 @@ function MaskParamsFields({
 								onPreview={previewNumberParam("width")}
 								onCommit={onCommit}
 							/>
+						</SectionField>
+						<SectionField label="Height">
 							<MaskNumberField
-								className="flex-1"
 								icon="H"
 								param={getNumberParamDefinition({
 									definition,
@@ -499,8 +466,8 @@ function MaskParamsFields({
 								onPreview={previewNumberParam("height")}
 								onCommit={onCommit}
 							/>
-						</div>
-					</SectionField>
+						</SectionField>
+					</>
 				)}
 
 			{definition.features.sizeMode === "height-only" &&
@@ -592,30 +559,30 @@ function MaskParamsFields({
 				/>
 			</SectionField>
 
-			<SectionField label="Stroke">
+			<SectionField label="Stroke Width">
+				<MaskNumberField
+					icon="W"
+					param={strokeWidthParam}
+					value={getMaskNumber({
+						params: mask.params,
+						key: "strokeWidth",
+					})}
+					onPreview={previewNumberParam("strokeWidth")}
+					onCommit={onCommit}
+				/>
+			</SectionField>
+
+			<SectionField label="Stroke Style">
 				<div className="flex flex-col gap-2">
-					<div className="flex items-center gap-2">
-						<MaskNumberField
-							className="flex-1"
-							icon="W"
-							param={strokeWidthParam}
-							value={getMaskNumber({
-								params: mask.params,
-								key: "strokeWidth",
-							})}
-							onPreview={previewNumberParam("strokeWidth")}
-							onCommit={onCommit}
-						/>
-						<ColorPicker
-							className=""
-							value={mask.params.strokeColor.replace(/^#/, "").toUpperCase()}
-							onChange={(color) => previewStrokeColor(`#${color}`)}
-							onChangeEnd={(color) => {
-								previewStrokeColor(`#${color}`);
-								onCommit();
-							}}
-						/>
-					</div>
+					<ColorPicker
+						className="w-full justify-start"
+						value={mask.params.strokeColor.replace(/^#/, "").toUpperCase()}
+						onChange={(color) => previewStrokeColor(`#${color}`)}
+						onChangeEnd={(color) => {
+							previewStrokeColor(`#${color}`);
+							onCommit();
+						}}
+					/>
 					{strokeAlignParam ? (
 						<Select
 							value={mask.params.strokeAlign}
@@ -650,6 +617,7 @@ const LETTER_SPACING_PARAM: NumberParamDefinition = {
 	min: -100,
 	max: 500,
 	step: 1,
+	slider: { min: -50, max: 100 },
 };
 
 const LINE_HEIGHT_PARAM: NumberParamDefinition = {
@@ -660,6 +628,7 @@ const LINE_HEIGHT_PARAM: NumberParamDefinition = {
 	min: 0.1,
 	max: 10,
 	step: 0.1,
+	slider: { min: 0.5, max: 3 },
 };
 
 function TextMaskFields({
@@ -678,6 +647,7 @@ function TextMaskFields({
 		parse: (input) => input,
 		onPreview: (value) => previewParam("content")(value),
 		onCommit,
+		supportsExpressions: false,
 	});
 
 	const previewNumberParam = (key: string) => (value: number) =>
@@ -712,25 +682,21 @@ function TextMaskFields({
 					onCommit={onCommit}
 				/>
 			</SectionField>
-			<SectionField label="Spacing">
-				<div className="flex items-start gap-2">
-					<MaskNumberField
-						className="w-1/2"
-						icon={<OcTextWidthIcon size={14} />}
-						param={LETTER_SPACING_PARAM}
-						value={mask.params.letterSpacing ?? 0}
-						onPreview={previewNumberParam("letterSpacing")}
-						onCommit={onCommit}
-					/>
-					<MaskNumberField
-						className="w-1/2"
-						icon={<OcTextHeightIcon size={14} />}
-						param={LINE_HEIGHT_PARAM}
-						value={mask.params.lineHeight ?? 1.2}
-						onPreview={previewNumberParam("lineHeight")}
-						onCommit={onCommit}
-					/>
-				</div>
+			<SectionField label="Letter Spacing">
+				<MaskNumberField
+					param={LETTER_SPACING_PARAM}
+					value={mask.params.letterSpacing ?? 0}
+					onPreview={previewNumberParam("letterSpacing")}
+					onCommit={onCommit}
+				/>
+			</SectionField>
+			<SectionField label="Line Height">
+				<MaskNumberField
+					param={LINE_HEIGHT_PARAM}
+					value={mask.params.lineHeight ?? 1.2}
+					onPreview={previewNumberParam("lineHeight")}
+					onCommit={onCommit}
+				/>
 			</SectionField>
 		</>
 	);
@@ -772,6 +738,7 @@ function MaskNumberField({
 	onCommit,
 	icon,
 	className,
+	showSlider = true,
 }: {
 	param: NumberParamDefinition;
 	value: number;
@@ -779,6 +746,7 @@ function MaskNumberField({
 	onCommit: () => void;
 	icon?: React.ReactNode;
 	className?: string;
+	showSlider?: boolean;
 }) {
 	const isPercent = param.unit === "percent";
 	const percentMax = param.max ?? 100;
@@ -819,18 +787,45 @@ function MaskNumberField({
 		onCommit,
 	});
 
+	const sliderMin =
+		param.slider?.min ??
+		(min !== undefined && Number.isFinite(min) && min >= -1000 ? min : -100);
+	const sliderMax =
+		param.slider?.max ??
+		(max !== undefined && Number.isFinite(max) && max <= 1000 ? max : 100);
+
 	return (
-		<NumberField
-			className={className}
-			icon={icon}
-			value={draft.displayValue}
-			dragSensitivity="slow"
-			onFocus={draft.onFocus}
-			onChange={draft.onChange}
-			onBlur={draft.onBlur}
-			onScrub={previewFromDisplay}
-			onScrubEnd={onCommit}
-		/>
+		<div className="flex w-full items-center gap-3">
+			{showSlider && (
+				<div className="flex-1 px-1">
+					<Slider
+						min={sliderMin}
+						max={sliderMax}
+						step={step ?? 1}
+						value={[displayValue]}
+						onValueChange={([val]) => previewFromDisplay(val)}
+						onValueCommit={([val]) => {
+							previewFromDisplay(val);
+							onCommit();
+						}}
+					/>
+				</div>
+			)}
+			<div className={showSlider ? "shrink-0 flex items-center" : "w-full"}>
+				<NumberField
+					className={cn(showSlider ? "w-16" : "w-full", className)}
+					icon={icon}
+					step={step}
+					value={draft.displayValue}
+					dragSensitivity="slow"
+					onFocus={draft.onFocus}
+					onChange={draft.onChange}
+					onBlur={draft.onBlur}
+					onScrub={previewFromDisplay}
+					onScrubEnd={onCommit}
+				/>
+			</div>
+		</div>
 	);
 }
 

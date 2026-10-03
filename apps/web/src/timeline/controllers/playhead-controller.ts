@@ -10,6 +10,7 @@ import {
 	buildTimelineSnapPoints,
 	getTimelineSnapThresholdInTicks,
 	resolveTimelineSnap,
+	type SnapPoint,
 } from "@/timeline/snapping";
 import { getBookmarkSnapPoints } from "@/timeline/bookmarks/index";
 import { getElementEdgeSnapPoints } from "@/timeline/element-snap-source";
@@ -57,6 +58,7 @@ export interface PlayheadConfig {
 		scrollLeft: number;
 		playheadTime: MediaTime;
 	}) => void;
+	onSnapPointChange?: (snapPoint: SnapPoint | null) => void;
 }
 
 export interface PlayheadConfigRef {
@@ -122,6 +124,7 @@ export class PlayheadController {
 
 	destroy(): void {
 		this.deactivate();
+		this.config.onSnapPointChange?.(null);
 	}
 
 	// --- Public event handlers (bound, stable references) ---
@@ -252,8 +255,10 @@ export class PlayheadController {
 		const frameTime = snapSeekMediaTime({ time: rawTime, duration, fps });
 
 		const time = (() => {
-			if (!isElementSnappingEnabled || this.config.isShiftHeld())
+			if (!isElementSnappingEnabled || this.config.isShiftHeld()) {
+				this.config.onSnapPointChange?.(null);
 				return frameTime;
+			}
 
 			const snapPoints = buildTimelineSnapPoints({
 				sources: [
@@ -274,6 +279,7 @@ export class PlayheadController {
 				snapPoints,
 				maxSnapDistance: getTimelineSnapThresholdInTicks({ zoomLevel }),
 			});
+			this.config.onSnapPointChange?.(result.snapPoint ?? null);
 			return result.snapPoint ? result.snappedTime : frameTime;
 		})();
 
@@ -297,6 +303,7 @@ export class PlayheadController {
 
 		const session = this.session;
 		this.config.setScrubbing(false);
+		this.config.onSnapPointChange?.(null);
 
 		if (session.currentTime !== null) {
 			this.config.seek(session.currentTime);

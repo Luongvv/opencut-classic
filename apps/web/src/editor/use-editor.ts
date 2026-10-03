@@ -11,9 +11,34 @@ function isShallowEqual({
 	b: unknown;
 }): boolean {
 	if (Object.is(a, b)) return true;
-	if (!Array.isArray(a) || !Array.isArray(b)) return false;
-	if (a.length !== b.length) return false;
-	return a.every((item, i) => Object.is(item, b[i]));
+
+	// Array shallow compare
+	if (Array.isArray(a) && Array.isArray(b)) {
+		if (a.length !== b.length) return false;
+		return a.every((item, i) => Object.is(item, b[i]));
+	}
+
+	// Plain object shallow compare
+	if (
+		typeof a === "object" &&
+		typeof b === "object" &&
+		a !== null &&
+		b !== null &&
+		!Array.isArray(a) &&
+		!Array.isArray(b)
+	) {
+		const keysA = Object.keys(a as Record<string, unknown>);
+		const keysB = Object.keys(b as Record<string, unknown>);
+		if (keysA.length !== keysB.length) return false;
+		return keysA.every((key) =>
+			Object.is(
+				(a as Record<string, unknown>)[key],
+				(b as Record<string, unknown>)[key],
+			),
+		);
+	}
+
+	return false;
 }
 
 const subscribeNone = () => () => {};
@@ -38,6 +63,7 @@ export function useEditor<T>(
 				editor.selection.subscribe(onChange),
 				editor.clipboard.subscribe(onChange),
 				editor.diagnostics.subscribe(onChange),
+				editor.save.subscribe(onChange),
 			];
 			return () => {
 				unsubscribers.forEach((unsubscribe) => {

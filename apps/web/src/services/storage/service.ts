@@ -131,7 +131,7 @@ class StorageService {
 		};
 	}
 
-	async saveProject({ project }: { project: TProject }): Promise<void> {
+	serializeProject({ project }: { project: TProject }): SerializedProject {
 		const duration =
 			project.metadata.duration ??
 			getProjectDurationFromScenes({ scenes: project.scenes });
@@ -145,7 +145,7 @@ class StorageService {
 			updatedAt: scene.updatedAt.toISOString(),
 		}));
 
-		const serializedProject: SerializedProject = {
+		return {
 			metadata: {
 				id: project.metadata.id,
 				name: project.metadata.name,
@@ -160,7 +160,57 @@ class StorageService {
 			version: project.version,
 			timelineViewState: project.timelineViewState,
 		};
+	}
 
+	deserializeProject({
+		serializedProject,
+	}: {
+		serializedProject: unknown;
+	}): TProject {
+		if (
+			typeof serializedProject !== "object" ||
+			serializedProject === null ||
+			!("metadata" in serializedProject) ||
+			typeof (serializedProject as Record<string, unknown>).metadata !== "object"
+		) {
+			throw new Error("Invalid project structure: missing metadata");
+		}
+
+		const sp = serializedProject as SerializedProject;
+		const scenes =
+			sp.scenes?.map((scene) => ({
+				id: scene.id,
+				name: scene.name,
+				isMain: scene.isMain,
+				tracks: scene.tracks,
+				bookmarks: normalizeBookmarks({ raw: scene.bookmarks }),
+				createdAt: new Date(scene.createdAt),
+				updatedAt: new Date(scene.updatedAt),
+			})) ?? [];
+
+		return {
+			metadata: {
+				id: sp.metadata.id,
+				name: sp.metadata.name,
+				thumbnail: sp.metadata.thumbnail,
+				duration: roundMediaTime({
+					time:
+						sp.metadata.duration ??
+						getProjectDurationFromScenes({ scenes }),
+				}),
+				createdAt: new Date(sp.metadata.createdAt),
+				updatedAt: new Date(sp.metadata.updatedAt),
+			},
+			scenes,
+			currentSceneId: sp.currentSceneId || "",
+			settings: sp.settings,
+			version: sp.version,
+			timelineViewState: sp.timelineViewState,
+		};
+	}
+
+	async saveProject({ project }: { project: TProject }): Promise<void> {
+		const serializedProject = this.serializeProject({ project });
 		await this.projectsAdapter.set({
 			key: project.metadata.id,
 			value: serializedProject,
@@ -190,37 +240,7 @@ class StorageService {
 			return null;
 		}
 
-		const scenes =
-			serializedProject.scenes?.map((scene) => ({
-				id: scene.id,
-				name: scene.name,
-				isMain: scene.isMain,
-				tracks: scene.tracks,
-				bookmarks: normalizeBookmarks({ raw: scene.bookmarks }),
-				createdAt: new Date(scene.createdAt),
-				updatedAt: new Date(scene.updatedAt),
-			})) ?? [];
-
-		const project: TProject = {
-			metadata: {
-				id: serializedProject.metadata.id,
-				name: serializedProject.metadata.name,
-				thumbnail: serializedProject.metadata.thumbnail,
-				duration: roundMediaTime({
-					time:
-						serializedProject.metadata.duration ??
-						getProjectDurationFromScenes({ scenes }),
-				}),
-				createdAt: new Date(serializedProject.metadata.createdAt),
-				updatedAt: new Date(serializedProject.metadata.updatedAt),
-			},
-			scenes,
-			currentSceneId: serializedProject.currentSceneId || "",
-			settings: serializedProject.settings,
-			version: serializedProject.version,
-			timelineViewState: serializedProject.timelineViewState,
-		};
-
+		const project = this.deserializeProject({ serializedProject });
 		return { project };
 	}
 
@@ -563,7 +583,7 @@ class StorageService {
 	}
 
 	isIndexedDBSupported(): boolean {
-		return "indexedDB" in window;
+		return typeof window !== "undefined" && "indexedDB" in window;
 	}
 
 	isFullySupported(): boolean {

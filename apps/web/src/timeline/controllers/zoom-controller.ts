@@ -1,7 +1,7 @@
 import type { WheelEvent as ReactWheelEvent } from "react";
 import { TIMELINE_ZOOM_ANCHOR_PLAYHEAD_THRESHOLD } from "@/timeline/components/interaction";
 import { timelineTimeToPixels } from "@/timeline/pixel-utils";
-import { TIMELINE_ZOOM_MAX } from "@/timeline/scale";
+import { TIMELINE_ZOOM_MAX, BASE_TIMELINE_PIXELS_PER_SECOND } from "@/timeline/scale";
 import { zoomToSlider } from "@/timeline/zoom-utils";
 import type { MediaTime } from "@/wasm";
 
@@ -48,6 +48,7 @@ export class ZoomController {
 	private prePlayheadAnchorScrollLeft = 0;
 	private isInPlayheadAnchorMode = false;
 	private scrollSaveTimeout: ReturnType<typeof setTimeout> | null = null;
+	private mouseAnchorX: number | null = null;
 
 	constructor(deps: { configRef: ZoomConfigRef; initialZoom?: number }) {
 		this.configRef = deps.configRef;
@@ -106,7 +107,7 @@ export class ZoomController {
 	}
 
 	handleWheel(event: ReactWheelEvent): void {
-		const isZoomGesture = event.ctrlKey || event.metaKey;
+		const isZoomGesture = event.ctrlKey || event.metaKey || event.altKey;
 		const isHorizontalScrollGesture =
 			event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY);
 
@@ -120,6 +121,7 @@ export class ZoomController {
 			const cappedDelta =
 				Math.sign(normalizedDelta) * Math.min(Math.abs(normalizedDelta), 30);
 			const zoomFactor = Math.exp(-cappedDelta / 300);
+			this.mouseAnchorX = event.clientX;
 			this.setZoomLevel((prev) => prev * zoomFactor);
 		}
 	}
@@ -183,12 +185,25 @@ export class ZoomController {
 			return Math.max(0, Math.min(maxScrollLeft, scrollLeft));
 		};
 
-		if (isCrossingThresholdUp) {
+		if (this.mouseAnchorX !== null) {
+			const containerRect = scrollElement.getBoundingClientRect();
+			const mouseViewportX = this.mouseAnchorX - containerRect.left;
+			this.mouseAnchorX = null;
+
+			const mouseContentPixelBefore = currentScrollLeft + mouseViewportX;
+			const mouseTime =
+				mouseContentPixelBefore /
+				(BASE_TIMELINE_PIXELS_PER_SECOND * previousZoom);
+			const mouseContentPixelAfter =
+				mouseTime * (BASE_TIMELINE_PIXELS_PER_SECOND * zoomLevel);
+			const nextScrollLeft = clampScrollLeft(
+				mouseContentPixelAfter - mouseViewportX,
+			);
+			syncScroll(nextScrollLeft);
+		} else if (isCrossingThresholdUp) {
 			this.prePlayheadAnchorScrollLeft = currentScrollLeft;
 			this.isInPlayheadAnchorMode = true;
-		}
-
-		if (sliderPercent >= TIMELINE_ZOOM_ANCHOR_PLAYHEAD_THRESHOLD) {
+		} else if (sliderPercent >= TIMELINE_ZOOM_ANCHOR_PLAYHEAD_THRESHOLD) {
 			const playheadPixelsBefore = timelineTimeToPixels({
 				time: playheadTime,
 				zoomLevel: previousZoom,

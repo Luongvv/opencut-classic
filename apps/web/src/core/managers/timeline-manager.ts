@@ -11,7 +11,7 @@ import type {
 import { calculateTotalDuration } from "@/timeline";
 import { TimelineDragSource } from "@/timeline/drag-source";
 import { findTrackInSceneTracks } from "@/timeline/track-element-update";
-import { lastFrameMediaTime, type MediaTime, ZERO_MEDIA_TIME } from "@/wasm";
+import { addMediaTime, lastFrameMediaTime, type MediaTime, ZERO_MEDIA_TIME } from "@/wasm";
 import {
 	canElementBeHidden,
 	canElementHaveAudio,
@@ -159,9 +159,11 @@ export class TimelineManager {
 	moveElements({
 		moves,
 		createTracks,
+		targetSelection,
 	}: {
 		moves: PlannedElementMove[];
 		createTracks?: PlannedTrackCreation[];
+		targetSelection?: Array<{ trackId: string; elementId: string }>;
 	}): void {
 		if (moves.length === 0) {
 			return;
@@ -170,6 +172,7 @@ export class TimelineManager {
 		const command = new MoveElementCommand({
 			moves,
 			createTracks,
+			targetSelection,
 		});
 		this.editor.command.execute({ command });
 	}
@@ -188,15 +191,18 @@ export class TimelineManager {
 		elements,
 		splitTime,
 		retainSide = "both",
+		ripple = false,
 	}: {
 		elements: { trackId: string; elementId: string }[];
 		splitTime: MediaTime;
 		retainSide?: "both" | "left" | "right";
+		ripple?: boolean;
 	}): { trackId: string; elementId: string }[] {
 		const command = new SplitElementsCommand({
 			elements,
 			splitTime,
 			retainSide,
+			ripple,
 		});
 		this.editor.command.execute({ command });
 		return command.getRightSideElements();
@@ -213,30 +219,41 @@ export class TimelineManager {
 
 	getLastFrameTime(): MediaTime {
 		const duration = this.getTotalDuration();
-		const fps = this.editor.project.getActive()?.settings.fps;
+		const fps = this.editor.project.getActiveOrNull()?.settings.fps;
 		if (!fps || duration <= 0) return duration;
 		return lastFrameMediaTime({ duration, fps });
 	}
 
-	getTrackById({ trackId }: { trackId: string }): TimelineTrack | null {
-		const activeScene = this.editor.scenes.getActiveSceneOrNull();
-		if (!activeScene) {
+	getTrackById({
+		trackId,
+		source = "committed",
+	}: {
+		trackId: string;
+		source?: "preview" | "committed";
+	}): TimelineTrack | null {
+		const tracks =
+			source === "preview"
+				? this.getPreviewTracks()
+				: this.editor.scenes.getActiveSceneOrNull()?.tracks;
+		if (!tracks) {
 			return null;
 		}
 
-		return findTrackInSceneTracks({ tracks: activeScene.tracks, trackId });
+		return findTrackInSceneTracks({ tracks, trackId });
 	}
 
 	getElementsWithTracks({
 		elements,
+		source = "committed",
 	}: {
 		elements: { trackId: string; elementId: string }[];
+		source?: "preview" | "committed";
 	}): Array<{ track: TimelineTrack; element: TimelineElement }> {
 		const result: Array<{ track: TimelineTrack; element: TimelineElement }> =
 			[];
 
 		for (const { trackId, elementId } of elements) {
-			const track = this.getTrackById({ trackId });
+			const track = this.getTrackById({ trackId, source });
 			const element = track?.elements.find(
 				(trackElement) => trackElement.id === elementId,
 			);
@@ -251,11 +268,52 @@ export class TimelineManager {
 
 	deleteElements({
 		elements,
+		ripple = false,
 	}: {
 		elements: { trackId: string; elementId: string }[];
+		ripple?: boolean;
 	}): void {
-		const command = new DeleteElementsCommand({ elements });
+		const command = new DeleteElementsCommand({ elements, ripple });
 		this.editor.command.execute({ command });
+	}
+
+	deleteGapsOnTrack({ trackId }: { trackId: string }): void {
+		const activeScene = this.editor.scenes.getActiveSceneOrNull();
+		if (!activeScene) return;
+
+		const targetTrack = findTrackInSceneTracks({
+			tracks: activeScene.tracks,
+			trackId,
+		});
+		if (!targetTrack || targetTrack.elements.length === 0) return;
+
+		const isMainTrack = trackId === activeScene.tracks.main.id;
+		const sorted = [...targetTrack.elements].sort(
+			(a, b) => a.startTime - b.startTime,
+		);
+
+		const updates: Array<{
+			trackId: string;
+			elementId: string;
+			patch: Partial<TimelineElement>;
+		}> = [];
+
+		let currentOffset = isMainTrack ? ZERO_MEDIA_TIME : sorted[0].startTime;
+
+		for (const element of sorted) {
+			if (element.startTime !== currentOffset) {
+				updates.push({
+					trackId,
+					elementId: element.id,
+					patch: { startTime: currentOffset },
+				});
+			}
+			currentOffset = addMediaTime({ a: currentOffset, b: element.duration });
+		}
+
+		if (updates.length > 0) {
+			this.updateElements({ updates });
+		}
 	}
 
 	toggleSourceAudioSeparation({

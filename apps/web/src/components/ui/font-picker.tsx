@@ -225,7 +225,7 @@ function FontRow({
 	const fontName = filteredFonts[index];
 	const entry = atlas.fonts[fontName];
 	const isSelected = fontName === selectedFont;
-	const isSystemFont = SYSTEM_FONTS.has(fontName);
+	const hasSprite = !!entry;
 
 	return (
 		<button
@@ -245,7 +245,7 @@ function FontRow({
 			aria-label={fontName}
 		>
 			<div className="min-w-0 overflow-hidden">
-				{isSystemFont ? (
+				{!hasSprite ? (
 					<span className="text-xl text-foreground/85" style={{ fontFamily: fontName }}>
 						{fontName}
 					</span>

@@ -125,6 +125,140 @@ export class ProjectManager {
 		}
 	}
 
+	async createProjectFromTemplate({
+		project,
+	}: {
+		project: TProject;
+	}): Promise<string> {
+		this.active = project;
+		this.notify();
+
+		this.editor.media.clearAllAssets();
+		this.editor.scenes.initializeScenes({
+			scenes: project.scenes,
+			currentSceneId: project.currentSceneId,
+		});
+
+		try {
+			await storageService.saveProject({ project });
+			this.updateMetadata(project);
+			this.savedProjects = [
+				project.metadata,
+				...this.savedProjects.filter((p) => p.id !== project.metadata.id),
+			];
+			this.notify();
+			void this.syncProjectToLocalDisk(project);
+
+			return project.metadata.id;
+		} catch (error) {
+			toast.error("Failed to create project from template");
+			throw error;
+		}
+	}
+
+	async syncProjectToLocalDisk(
+		project: TProject,
+	): Promise<{ success: boolean; filePath?: string; fileName?: string; error?: string }> {
+		try {
+			const serialized = storageService.serializeProject({ project });
+			const res = await fetch("/api/projects/local-sync", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ project: serialized }),
+			});
+			if (!res.ok) {
+				const errData = await res.json().catch(() => ({}));
+				return {
+					success: false,
+					error: errData.error || `HTTP ${res.status}`,
+				};
+			}
+			const data = await res.json();
+			return {
+				success: true,
+				filePath: data.filePath,
+				fileName: data.fileName,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				error: error instanceof Error ? error.message : "Sync error",
+			};
+		}
+	}
+
+	async importProjectFromJson({
+		jsonString,
+	}: {
+		jsonString: string;
+	}): Promise<string> {
+		try {
+			const parsed = JSON.parse(jsonString);
+			const project = storageService.deserializeProject({
+				serializedProject: parsed,
+			});
+
+			if (!project.metadata.id) {
+				project.metadata.id = generateUUID();
+			}
+
+			await storageService.saveProject({ project });
+			this.updateMetadata(project);
+			this.savedProjects = [
+				project.metadata,
+				...this.savedProjects.filter((p) => p.id !== project.metadata.id),
+			];
+			this.notify();
+			void this.syncProjectToLocalDisk(project);
+
+			return project.metadata.id;
+		} catch (error) {
+			console.error("Failed to import project from JSON:", error);
+			throw error;
+		}
+	}
+
+	async exportProjectAsJson({
+		id,
+	}: {
+		id?: string;
+	} = {}): Promise<{ filename: string; json: string }> {
+		let project = this.active;
+		if (id && (!project || project.metadata.id !== id)) {
+			const result = await storageService.loadProject({ id });
+			if (result) {
+				project = result.project;
+			}
+		}
+		if (!project) {
+			throw new Error("No active project to export");
+		}
+		const serialized = storageService.serializeProject({ project });
+		const json = JSON.stringify(serialized, null, 2);
+		const safeName = (project.metadata.name || "project")
+			.replace(/[/\\?%*:|"<>]/g, "_")
+			.replace(/\s+/g, "_")
+			.trim();
+		const filename = `${safeName}.opencut.json`;
+		return { filename, json };
+	}
+
+	async downloadProjectJson({ id }: { id?: string } = {}): Promise<void> {
+		const { filename, json } = await this.exportProjectAsJson({ id });
+		const blob = new Blob([json], { type: "application/json" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+		toast.success(`Đã xuất tệp dự án: ${filename}`, {
+			description: "Tệp JSON được lưu về máy, có thể dùng để mở lại hoặc gửi đi.",
+		});
+	}
+
 	async loadProject({ id }: { id: string }): Promise<void> {
 		if (!this.isInitialized) {
 			this.isLoading = true;

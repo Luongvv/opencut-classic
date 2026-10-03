@@ -12,7 +12,9 @@ import {
 } from "@/utils/math";
 import { SectionField } from "@/components/section";
 import { NumberField } from "@/components/ui/number-field";
+import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { FontPicker } from "@/components/ui/font-picker";
 import { ColorPicker } from "@/components/ui/color-picker";
 import {
 	Select,
@@ -138,26 +140,63 @@ function ParamInput({
 
 	if (param.type === "text") {
 		return (
-			<Textarea
+			<TextParamField
 				value={String(value)}
-				onChange={(event) => onPreview(event.currentTarget.value)}
-				onBlur={onCommit}
+				onPreview={onPreview}
+				onCommit={onCommit}
 			/>
 		);
 	}
 
 	if (param.type === "font") {
 		return (
-			<input
-				className="border-input bg-accent h-9 w-full rounded-md border px-3 text-sm outline-none"
-				value={String(value)}
-				onChange={(event) => onPreview(event.currentTarget.value)}
-				onBlur={onCommit}
+			<FontPicker
+				defaultValue={String(value)}
+				onValueChange={(family) => {
+					onPreview(family);
+					onCommit();
+				}}
 			/>
 		);
 	}
 
 	return null;
+}
+
+function TextParamField({
+	value,
+	onPreview,
+	onCommit,
+}: {
+	value: string;
+	onPreview: (value: string) => void;
+	onCommit: () => void;
+}) {
+	const draft = usePropertyDraft({
+		displayValue: value,
+		parse: (input) => input,
+		onPreview,
+		onCommit,
+		supportsExpressions: false,
+	});
+
+	const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+		if (event.key === "Enter" && event.ctrlKey) {
+			event.preventDefault();
+			event.currentTarget.blur();
+		}
+	};
+
+	return (
+		<Textarea
+			value={draft.displayValue}
+			onFocus={draft.onFocus}
+			onChange={draft.onChange}
+			onBlur={draft.onBlur}
+			onKeyDown={handleKeyDown}
+			className="min-h-20 [field-sizing:content]"
+		/>
+	);
 }
 
 function NumberParamField({
@@ -207,18 +246,40 @@ function NumberParamField({
 		onCommit();
 	};
 
+	const sliderOpts =
+		param.slider ||
+		(min !== undefined && max !== undefined ? { min, max } : null);
+
 	return (
-		<NumberField
-			icon={param.shortLabel}
-			value={draft.displayValue}
-			dragSensitivity="slow"
-			isDefault={value === param.default}
-			onFocus={draft.onFocus}
-			onChange={draft.onChange}
-			onBlur={draft.onBlur}
-			onScrub={previewFromDisplay}
-			onScrubEnd={onCommit}
-			onReset={handleReset}
-		/>
+		<div className="flex w-full items-center gap-3">
+			{sliderOpts && (
+				<div className="flex-1 px-1">
+					<Slider
+						min={sliderOpts.min}
+						max={sliderOpts.max}
+						step={step}
+						value={[displayValue]}
+						onValueChange={([val]) => previewFromDisplay(val)}
+						onValueCommit={onCommit}
+					/>
+				</div>
+			)}
+			<div className={sliderOpts ? "shrink-0 flex items-center" : "w-full"}>
+				<NumberField
+					className={sliderOpts ? "w-16" : "w-full"}
+					icon={param.shortLabel}
+					value={draft.displayValue}
+					step={step * displayMultiplier}
+					dragSensitivity="slow"
+					isDefault={value === param.default}
+					onFocus={draft.onFocus}
+					onChange={draft.onChange}
+					onBlur={draft.onBlur}
+					onScrub={previewFromDisplay}
+					onScrubEnd={onCommit}
+					onReset={handleReset}
+				/>
+			</div>
+		</div>
 	);
 }

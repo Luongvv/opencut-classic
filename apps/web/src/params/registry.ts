@@ -101,6 +101,7 @@ const visualElementParams: ElementParamDefinition[] = [
 		default: DEFAULTS.element.transform.position.x,
 		min: -100_000,
 		step: 1,
+		slider: { min: -2000, max: 2000 },
 	},
 	{
 		key: "transform.positionY",
@@ -109,6 +110,7 @@ const visualElementParams: ElementParamDefinition[] = [
 		default: DEFAULTS.element.transform.position.y,
 		min: -100_000,
 		step: 1,
+		slider: { min: -2000, max: 2000 },
 	},
 	{
 		key: "transform.scaleX",
@@ -117,6 +119,7 @@ const visualElementParams: ElementParamDefinition[] = [
 		default: DEFAULTS.element.transform.scaleX,
 		min: MIN_TRANSFORM_SCALE,
 		step: 0.01,
+		slider: { min: 0, max: 5 },
 	},
 	{
 		key: "transform.scaleY",
@@ -125,6 +128,7 @@ const visualElementParams: ElementParamDefinition[] = [
 		default: DEFAULTS.element.transform.scaleY,
 		min: MIN_TRANSFORM_SCALE,
 		step: 0.01,
+		slider: { min: 0, max: 5 },
 	},
 	{
 		key: "transform.rotate",
@@ -195,6 +199,7 @@ const textElementParams: ElementParamDefinition[] = [
 		default: 15,
 		min: 1,
 		step: 1,
+		slider: { min: 1, max: 300 },
 	},
 	{
 		key: "color",
@@ -255,6 +260,7 @@ const textElementParams: ElementParamDefinition[] = [
 		default: DEFAULTS.text.letterSpacing,
 		min: -100,
 		step: 0.1,
+		slider: { min: -20, max: 100 },
 	},
 	{
 		key: "lineHeight",
@@ -263,6 +269,7 @@ const textElementParams: ElementParamDefinition[] = [
 		default: DEFAULTS.text.lineHeight,
 		min: 0.1,
 		step: 0.1,
+		slider: { min: 0.5, max: 4 },
 	},
 	{
 		key: "background.enabled",
@@ -296,6 +303,7 @@ const textElementParams: ElementParamDefinition[] = [
 		min: 0,
 		step: 1,
 		dependencies: [{ param: "background.enabled", equals: true }],
+		slider: { min: 0, max: 200 },
 	},
 	{
 		key: "background.paddingY",
@@ -305,6 +313,7 @@ const textElementParams: ElementParamDefinition[] = [
 		min: 0,
 		step: 1,
 		dependencies: [{ param: "background.enabled", equals: true }],
+		slider: { min: 0, max: 200 },
 	},
 	{
 		key: "background.offsetX",
@@ -314,6 +323,7 @@ const textElementParams: ElementParamDefinition[] = [
 		min: -100_000,
 		step: 1,
 		dependencies: [{ param: "background.enabled", equals: true }],
+		slider: { min: -500, max: 500 },
 	},
 	{
 		key: "background.offsetY",
@@ -323,6 +333,7 @@ const textElementParams: ElementParamDefinition[] = [
 		min: -100_000,
 		step: 1,
 		dependencies: [{ param: "background.enabled", equals: true }],
+		slider: { min: -500, max: 500 },
 	},
 ];
 

@@ -1,0 +1,469 @@
+{
+  "metadata": {
+    "id": "e00540f3-2a26-45c3-88f3-bdf40a642f55",
+    "name": "Video Khoi Nghiep 01",
+    "duration": 1260000,
+    "createdAt": "2026-10-03T03:48:31.922Z",
+    "updatedAt": "2026-10-03T03:48:31.922Z"
+  },
+  "settings": {
+    "fps": {
+      "numerator": 30,
+      "denominator": 1
+    },
+    "canvasSize": {
+      "width": 1080,
+      "height": 1920
+    },
+    "canvasSizeMode": "preset",
+    "lastCustomCanvasSize": null,
+    "originalCanvasSize": null,
+    "background": {
+      "type": "color",
+      "color": "#060709"
+    }
+  },
+  "scenes": [
+    {
+      "id": "8bd57d68-51b3-49f1-b32c-ae4bfa947c01",
+      "name": "Storytelling Smart Cut Scene",
+      "isMain": true,
+      "tracks": {
+        "overlay": [
+          {
+            "id": "22c754dc-c6e2-439e-bd21-8385adfb0464",
+            "name": "Top-Halo Headlines (Dual-Font)",
+            "type": "text",
+            "hidden": false,
+            "elements": [
+              {
+                "id": "4d68dfbc-5ba1-410f-9f5e-93b84a0a0bb0",
+                "type": "text",
+                "name": "Hook Lead-in",
+                "startTime": 12000,
+                "duration": 384000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "hidden": false,
+                "params": {
+                  "content": "đi làm là",
+                  "fontFamily": "Dancing Script",
+                  "fontSize": 14,
+                  "fontWeight": "bold",
+                  "color": "#FFFFFF",
+                  "textAlign": "center",
+                  "transform.positionY": -870
+                }
+              },
+              {
+                "id": "706912bf-6e83-46ce-8513-96bc92d8a913",
+                "type": "text",
+                "name": "Hook Keyword",
+                "startTime": 30000,
+                "duration": 372000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "hidden": false,
+                "params": {
+                  "content": "CÓ NGAY LÌ XÌ",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 22,
+                  "fontWeight": "bold",
+                  "color": "#FF9900",
+                  "textAlign": "center",
+                  "letterSpacing": 2,
+                  "transform.positionY": -810
+                }
+              },
+              {
+                "id": "8084cf76-a599-4b06-9b04-47e1cfab90d4",
+                "type": "text",
+                "name": "Proof Lead-in",
+                "startTime": 432000,
+                "duration": 384000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "hidden": false,
+                "params": {
+                  "content": "môi trường",
+                  "fontFamily": "Dancing Script",
+                  "fontSize": 14,
+                  "fontWeight": "bold",
+                  "color": "#FFFFFF",
+                  "textAlign": "center",
+                  "transform.positionY": -870
+                }
+              },
+              {
+                "id": "2a154f25-8c74-49c9-849b-c1c840d579ba",
+                "type": "text",
+                "name": "Proof Keyword",
+                "startTime": 450000,
+                "duration": 372000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "hidden": false,
+                "params": {
+                  "content": "MÁY LẠNH 24/7",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 22,
+                  "fontWeight": "bold",
+                  "color": "#FF9900",
+                  "textAlign": "center",
+                  "letterSpacing": 2,
+                  "transform.positionY": -810
+                }
+              },
+              {
+                "id": "c69aa6e4-968c-4947-be76-da27fa53d27f",
+                "type": "text",
+                "name": "CTA Lead-in",
+                "startTime": 852000,
+                "duration": 384000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "hidden": false,
+                "params": {
+                  "content": "nhắn tin ngay",
+                  "fontFamily": "Dancing Script",
+                  "fontSize": 14,
+                  "fontWeight": "bold",
+                  "color": "#FFFFFF",
+                  "textAlign": "center",
+                  "transform.positionY": -870
+                }
+              },
+              {
+                "id": "0b495f5e-aa2b-421f-9467-877df1baeabe",
+                "type": "text",
+                "name": "CTA Keyword",
+                "startTime": 870000,
+                "duration": 372000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "hidden": false,
+                "params": {
+                  "content": "NHẬN VIỆC LIỀN TAY",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 22,
+                  "fontWeight": "bold",
+                  "color": "#FF9900",
+                  "textAlign": "center",
+                  "letterSpacing": 2,
+                  "transform.positionY": -810
+                }
+              }
+            ]
+          },
+          {
+            "id": "3266d663-25e7-46ba-9077-639f60d17ab2",
+            "name": "Micro-Captions (Montserrat 900)",
+            "type": "text",
+            "hidden": false,
+            "elements": [
+              {
+                "id": "fd58ad9b-7b67-472e-8739-665a41628c96",
+                "type": "text",
+                "name": "Cap 1",
+                "startTime": 18000,
+                "duration": 168000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "hidden": false,
+                "params": {
+                  "content": "Đi làm là",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 12,
+                  "fontWeight": "bold",
+                  "color": "#FFFFFF",
+                  "textAlign": "center",
+                  "transform.positionY": 690
+                }
+              },
+              {
+                "id": "d2b4732e-108e-44c6-ab62-d3e9e91f5f5d",
+                "type": "text",
+                "name": "Cap 2 (Highlight)",
+                "startTime": 186000,
+                "duration": 216000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "hidden": false,
+                "params": {
+                  "content": "CÓ NGAY LÌ XÌ",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 14,
+                  "fontWeight": "bold",
+                  "color": "#FF9900",
+                  "textAlign": "center",
+                  "transform.positionY": 690
+                }
+              },
+              {
+                "id": "6548e370-ebc1-4609-aa1d-9f860ca541c5",
+                "type": "text",
+                "name": "Cap 3",
+                "startTime": 438000,
+                "duration": 180000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "hidden": false,
+                "params": {
+                  "content": "Môi trường làm việc",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 12,
+                  "fontWeight": "bold",
+                  "color": "#FFFFFF",
+                  "textAlign": "center",
+                  "transform.positionY": 690
+                }
+              },
+              {
+                "id": "a5a57c8a-fd63-4017-ab25-96f97d9a6884",
+                "type": "text",
+                "name": "Cap 4 (Highlight)",
+                "startTime": 618000,
+                "duration": 204000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "hidden": false,
+                "params": {
+                  "content": "MÁY LẠNH 24/7",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 14,
+                  "fontWeight": "bold",
+                  "color": "#FF9900",
+                  "textAlign": "center",
+                  "transform.positionY": 690
+                }
+              },
+              {
+                "id": "8b18563b-c60d-4d27-a94a-c4e5df1789c9",
+                "type": "text",
+                "name": "Cap 5",
+                "startTime": 858000,
+                "duration": 180000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "hidden": false,
+                "params": {
+                  "content": "Nhắn tin ngay cho mình",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 12,
+                  "fontWeight": "bold",
+                  "color": "#FFFFFF",
+                  "textAlign": "center",
+                  "transform.positionY": 690
+                }
+              },
+              {
+                "id": "20e92d0a-915e-4d8f-af74-0af347b2b54e",
+                "type": "text",
+                "name": "Cap 6 (Highlight)",
+                "startTime": 1038000,
+                "duration": 204000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "hidden": false,
+                "params": {
+                  "content": "NHẬN VIỆC LIỀN TAY",
+                  "fontFamily": "Montserrat",
+                  "fontSize": 14,
+                  "fontWeight": "bold",
+                  "color": "#FF9900",
+                  "textAlign": "center",
+                  "transform.positionY": 690
+                }
+              }
+            ]
+          },
+          {
+            "id": "362dbe43-932e-4e14-b7fa-b7e222c26387",
+            "name": "Visual Cards & Ambient Glow",
+            "type": "graphic",
+            "hidden": false,
+            "elements": [
+              {
+                "id": "a5cb489b-e1c3-426a-8a53-c6a1edcdd7fa",
+                "type": "graphic",
+                "definitionId": "storytelling-top-halo-badge",
+                "name": "Top-Halo Glow",
+                "startTime": 0,
+                "duration": 1260000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "hidden": false,
+                "params": {
+                  "transform.positionY": -820,
+                  "transform.scaleX": 1.2,
+                  "transform.scaleY": 0.5,
+                  "opacity": 0.85
+                }
+              }
+            ]
+          },
+          {
+            "id": "8259b382-e111-444a-988e-364297e39a2b",
+            "name": "B-Roll Cutaway (9:16 / 16:9)",
+            "type": "video",
+            "hidden": false,
+            "muted": false,
+            "elements": []
+          }
+        ],
+        "main": {
+          "id": "5e386f27-a356-431b-967a-9fe0a6553be6",
+          "name": "A-Roll (Talking Head)",
+          "type": "video",
+          "muted": false,
+          "hidden": false,
+          "elements": []
+        },
+        "audio": [
+          {
+            "id": "5abc6d5d-085e-48bd-bc56-bf989fb6a039",
+            "name": "Voiceover (Speech)",
+            "type": "audio",
+            "muted": false,
+            "elements": []
+          },
+          {
+            "id": "2054ea92-1670-4057-a795-b78fd3c9a2f9",
+            "name": "BGM (Indie Acoustic Guitar)",
+            "type": "audio",
+            "muted": false,
+            "elements": [
+              {
+                "id": "89a9fbbd-3246-4f81-9b8b-758137c08fe5",
+                "type": "audio",
+                "sourceType": "library",
+                "sourceUrl": "/templates/storytelling-smart-cut/music/indie-acoustic-story.mp3",
+                "name": "Indie Acoustic Story Loop",
+                "startTime": 0,
+                "duration": 1260000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "params": {
+                  "volume": 0.08
+                }
+              }
+            ]
+          },
+          {
+            "id": "3bf2a7b5-0bce-4789-8b70-78206b1a1845",
+            "name": "SFX (Whoosh, Pop, Ting)",
+            "type": "audio",
+            "muted": false,
+            "elements": [
+              {
+                "id": "e03f37dd-3ff9-4f37-a52b-c723b465d2c0",
+                "type": "audio",
+                "sourceType": "library",
+                "sourceUrl": "/templates/storytelling-smart-cut/sfx/whoosh.mp3",
+                "name": "Whoosh Transition In",
+                "startTime": 6000,
+                "duration": 78000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "params": {
+                  "volume": 0.45
+                }
+              },
+              {
+                "id": "6c8d3b85-611f-4684-a33a-52991101d795",
+                "type": "audio",
+                "sourceType": "library",
+                "sourceUrl": "/templates/storytelling-smart-cut/sfx/pop.mp3",
+                "name": "Pop Headline Punch",
+                "startTime": 30000,
+                "duration": 48000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "params": {
+                  "volume": 0.5
+                }
+              },
+              {
+                "id": "8ea85b7e-d4d5-45f7-bbb0-f83d0c38f6f7",
+                "type": "audio",
+                "sourceType": "library",
+                "sourceUrl": "/templates/storytelling-smart-cut/sfx/whoosh.mp3",
+                "name": "Whoosh Shot 2 Cut",
+                "startTime": 420000,
+                "duration": 78000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "params": {
+                  "volume": 0.45
+                }
+              },
+              {
+                "id": "f3b5146d-5887-4760-a20d-340251ed5c5b",
+                "type": "audio",
+                "sourceType": "library",
+                "sourceUrl": "/templates/storytelling-smart-cut/sfx/ting.mp3",
+                "name": "Ting Stat Highlight",
+                "startTime": 450000,
+                "duration": 60000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "params": {
+                  "volume": 0.48
+                }
+              },
+              {
+                "id": "d1f33259-50cc-4b3c-b955-32cb7a14747c",
+                "type": "audio",
+                "sourceType": "library",
+                "sourceUrl": "/templates/storytelling-smart-cut/sfx/whoosh.mp3",
+                "name": "Whoosh Shot 3 CTA",
+                "startTime": 840000,
+                "duration": 78000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "params": {
+                  "volume": 0.45
+                }
+              },
+              {
+                "id": "4b832d7d-80ff-4492-a98f-627feaca3d6d",
+                "type": "audio",
+                "sourceType": "library",
+                "sourceUrl": "/templates/storytelling-smart-cut/sfx/thud.mp3",
+                "name": "Thud Final Hit",
+                "startTime": 870000,
+                "duration": 60000,
+                "trimStart": 0,
+                "trimEnd": 0,
+                "params": {
+                  "volume": 0.55
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "bookmarks": [
+        {
+          "time": 0,
+          "note": "Phase 1: Hook (0s - 3.5s)",
+          "color": "#FF9900"
+        },
+        {
+          "time": 420000,
+          "note": "Phase 2: Core Proof (3.5s - 7.0s)",
+          "color": "#FF9900"
+        },
+        {
+          "time": 840000,
+          "note": "Phase 3: Outro CTA (7.0s - 10.5s)",
+          "color": "#FF9900"
+        }
+      ],
+      "createdAt": "2026-10-03T03:48:31.924Z",
+      "updatedAt": "2026-10-03T03:48:31.924Z"
+    }
+  ],
+  "currentSceneId": "8bd57d68-51b3-49f1-b32c-ae4bfa947c01",
+  "version": 31
+}

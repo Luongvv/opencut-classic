@@ -293,7 +293,11 @@ function ToolbarRightSection({
 				<ToolbarButton
 					icon={<OcRippleIcon size={24} className="scale-110" />}
 					isActive={rippleEditingEnabled}
-					tooltip="Ripple editing"
+					tooltip={
+						rippleEditingEnabled
+							? "Auto-ripple & Liên kết: Đang BẬT (Kéo dài/thu ngắn tự đẩy & liên kết clip)"
+							: "Auto-ripple & Liên kết: Đang TẮT (Click để bật chế độ hút & liên kết)"
+					}
 					onClick={() => toggleRippleEditing()}
 				/>
 			</TooltipProvider>

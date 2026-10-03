@@ -1,0 +1,211 @@
+{
+  "templateCategory": "creator",
+  "note": "Asset & SFX manifest for `creator/hormozi-smart-cut` (9:16 Smart Talking-Head). All SFX, 3D icons/stickers, and brand logos are stored locally under `public/assets/creator/`.",
+  "music": [
+    {
+      "id": "indie-acoustic-story",
+      "path": "assets/creator/music/indie-acoustic-story.mp3",
+      "volume": 0.068,
+      "desc": "Nhạc đệm Guitar Acoustic / Indie nhẹ nhàng, nhịp phách đều đặn, audio ducking tôn giọng chia sẻ storytelling",
+      "mood": ["acoustic", "indie", "storytelling", "journey", "warm", "inspiring"]
+    },
+    {
+      "id": "nastelbom-soft-music",
+      "path": "assets/news/music/nastelbom-soft-music.mp3",
+      "volume": 0.08,
+      "desc": "Soft, clean editorial background music that keeps spoken voiceover crisp",
+      "mood": ["soft", "calm", "informative", "recruitment", "creator"]
+    },
+    {
+      "id": "miromaxmusic-music-promotion",
+      "path": "assets/news/music/miromaxmusic-music-promotion.mp3",
+      "volume": 0.08,
+      "desc": "Upbeat, positive promotional bed for recruitment and business highlights",
+      "mood": ["uplifting", "promotional", "lifestyle", "energetic"]
+    },
+    {
+      "id": "sonican-tech-news-information",
+      "path": "assets/news/music/sonican-tech-news-information.mp3",
+      "volume": 0.072,
+      "desc": "Modern tech pulse for electronics / manufacturing / CNC topics",
+      "mood": ["technology", "modern", "informative"]
+    }
+  ],
+  "sfx": [
+    {
+      "id": "swoosh",
+      "path": "assets/creator/sfx/swoosh.wav",
+      "mp3Path": "assets/creator/sfx/swoosh.mp3",
+      "volume": 0.45,
+      "desc": "Soft airy swoosh for smooth A-roll and B-roll storytelling cuts"
+    },
+    {
+      "id": "thud",
+      "path": "assets/creator/sfx/thud.wav",
+      "mp3Path": "assets/creator/sfx/thud.mp3",
+      "volume": 0.6,
+      "desc": "Warm sub-bass thud / bass hit synchronized with key stats or emotional words"
+    },
+    {
+      "id": "ting",
+      "path": "assets/creator/sfx/ting.wav",
+      "mp3Path": "assets/creator/sfx/ting.mp3",
+      "volume": 0.6,
+      "desc": "Clean crystal chime when revenue numbers or milestones pop in"
+    },
+    {
+      "id": "pop",
+      "path": "assets/creator/sfx/pop.wav",
+      "mp3Path": "assets/creator/sfx/pop.mp3",
+      "aliasPath": "assets/creator/sfx/pop-nhe.wav",
+      "volume": 0.65,
+      "desc": "Crisp bubble/sticker pop for shoulder badges and keyword callouts"
+    },
+    {
+      "id": "ding",
+      "path": "assets/creator/sfx/ding.wav",
+      "mp3Path": "assets/creator/sfx/ding.mp3",
+      "volume": 0.65,
+      "desc": "Bright bell chime for positive perks, checklist ticks, and benefits"
+    },
+    {
+      "id": "cash",
+      "path": "assets/creator/sfx/cash.mp3",
+      "wavPath": "assets/creator/sfx/cash.wav",
+      "aliasPath": "assets/creator/sfx/ting-tien-ve.mp3",
+      "volume": 0.7,
+      "desc": "Cha-ching coin register sound for salary, bonus (13.8M, 15M, 17.5M), and income stats"
+    },
+    {
+      "id": "whoosh",
+      "path": "assets/creator/sfx/whoosh.wav",
+      "mp3Path": "assets/creator/sfx/whoosh.mp3",
+      "volume": 0.55,
+      "desc": "Smooth cinematic air whoosh for camera zooms and flash/light-leak transitions"
+    },
+    {
+      "id": "whip",
+      "path": "assets/creator/sfx/whip.wav",
+      "mp3Path": "assets/creator/sfx/whip.mp3",
+      "volume": 0.55,
+      "desc": "Fast whip pan sound for whip-slide scene transitions"
+    },
+    {
+      "id": "click",
+      "path": "assets/creator/sfx/click.wav",
+      "mp3Path": "assets/creator/sfx/click.mp3",
+      "volume": 0.6,
+      "desc": "Mechanical UI click for typewriter text and glass checklist cards"
+    },
+    {
+      "id": "switch",
+      "path": "assets/creator/sfx/switch.wav",
+      "mp3Path": "assets/creator/sfx/switch.mp3",
+      "volume": 0.55,
+      "desc": "Clean dual-transient switch for jump-in camera cuts"
+    },
+    {
+      "id": "boom",
+      "path": "assets/creator/sfx/boom.wav",
+      "mp3Path": "assets/creator/sfx/boom.mp3",
+      "volume": 0.65,
+      "desc": "Punchy sub-bass impact for big headlines and stamp-slam callouts"
+    },
+    {
+      "id": "error",
+      "path": "assets/creator/sfx/error.wav",
+      "mp3Path": "assets/creator/sfx/error.mp3",
+      "volume": 0.6,
+      "desc": "Warning buzzer for mistakes, risks, or 'NO FEE / KHÔNG THU PHÍ' emphasis"
+    },
+    {
+      "id": "shutter",
+      "path": "assets/creator/sfx/shutter.wav",
+      "mp3Path": "assets/creator/sfx/shutter.mp3",
+      "volume": 0.6,
+      "desc": "Camera shutter snap for B-roll windows and photo cutaways"
+    }
+  ],
+  "icons": [
+    {
+      "id": "money",
+      "path": "assets/creator/icons/icon-tui-tien-3d.png",
+      "stickerGif": "assets/creator/icons/sticker-tien-bay.gif",
+      "desc": "3D Gold Money Bag icon for salary, bonus, and financial perks"
+    },
+    {
+      "id": "warning",
+      "path": "assets/creator/icons/icon-canh-bao-do.png",
+      "desc": "3D Red Warning Triangle icon for alerts, rules, or zero-fee notices"
+    },
+    {
+      "id": "rocket",
+      "path": "assets/creator/icons/icon-ten-lua-3d.png",
+      "desc": "3D Rocket icon for fast onboarding, growth, and top corporations"
+    },
+    {
+      "id": "fire",
+      "path": "assets/creator/icons/icon-lua-hot-3d.png",
+      "stickerGif": "assets/creator/icons/sticker-lua-hot.gif",
+      "desc": "3D Blazing Fire icon for hot jobs and urgent openings"
+    },
+    {
+      "id": "check",
+      "path": "assets/creator/icons/icon-tich-xanh-3d.png",
+      "stickerGif": "assets/creator/icons/sticker-tich-xanh.gif",
+      "desc": "3D Emerald Verified Checkmark for free support, dorms, shuttle bus, and meals"
+    },
+    {
+      "id": "bulb",
+      "path": "assets/creator/icons/icon-bong-den-y-tuong.png",
+      "desc": "3D Glowing Lightbulb icon for tips, insights, and clean environment"
+    },
+    {
+      "id": "trophy",
+      "path": "assets/creator/icons/icon-cup-vang-3d.png",
+      "desc": "3D Golden Trophy icon for top benefits and #1 industrial park employers"
+    },
+    {
+      "id": "target",
+      "path": "assets/creator/icons/icon-muc-tieu-3d.png",
+      "desc": "3D Target Bullseye icon for precision CNC work and clear requirements"
+    },
+    {
+      "id": "bolt",
+      "path": "assets/creator/icons/icon-tia-set-3d.png",
+      "stickerGif": "assets/creator/icons/sticker-mui-ten-chi.gif",
+      "desc": "3D Electric Bolt icon for electronics manufacturing and fast action"
+    },
+    {
+      "id": "chart-up",
+      "path": "assets/creator/icons/icon-bieu-do-tang-truong.png",
+      "desc": "3D Rising Chart icon for stat counter cards and high bonuses"
+    }
+  ],
+  "brandLogos": [
+    {
+      "id": "gee-pill",
+      "path": "assets/creator/brand/logo-gee.png",
+      "position": "top-right",
+      "desc": "GEE Brand Logo in frosted dark pill badge (ideal for outdoor bright sky videos)"
+    },
+    {
+      "id": "gee-transparent",
+      "path": "assets/creator/brand/logo-gee-transparent.png",
+      "position": "top-right",
+      "desc": "GEE Brand Logo with transparent background"
+    },
+    {
+      "id": "logo-kenh-a",
+      "path": "assets/creator/brand/logo-kenh-a.png",
+      "position": "top-right",
+      "desc": "Channel A Brand Logo preset"
+    },
+    {
+      "id": "logo-kenh-b",
+      "path": "assets/creator/brand/logo-kenh-b.png",
+      "position": "top-left",
+      "desc": "Channel B Brand Logo preset"
+    }
+  ]
+}

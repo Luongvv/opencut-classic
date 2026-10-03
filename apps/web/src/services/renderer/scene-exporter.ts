@@ -41,6 +41,7 @@ export type SceneExporterEvents = {
 	progress: [progress: number];
 	complete: [buffer: ArrayBuffer];
 	error: [error: Error];
+	warning: [info: { message: string }];
 	cancelled: [];
 };
 
@@ -109,6 +110,7 @@ export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 		let audioSource: AudioBufferSource | null = null;
 		if (this.shouldIncludeAudio && this.audioBuffer) {
 			let audioCodec: "aac" | "opus" = this.format === "webm" ? "opus" : "aac";
+			let skipAudio = false;
 
 			if (audioCodec === "aac" && typeof AudioEncoder !== "undefined") {
 				const { supported } = await AudioEncoder.isConfigSupported({
@@ -117,14 +119,30 @@ export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 					numberOfChannels: this.audioBuffer.numberOfChannels,
 					bitrate: 192000,
 				});
-				if (!supported) audioCodec = "opus";
+				if (!supported) {
+					if (this.format === "mp4") {
+						// Opus in MP4 is incompatible with most players — skip audio and warn
+						console.warn(
+							"[SceneExporter] AAC encoding not supported by this browser. Audio track will be omitted from MP4 export.",
+						);
+						this.emit("warning", {
+							message:
+								"Your browser does not support AAC encoding. The exported MP4 will have no audio. Use WebM format for audio support.",
+						});
+						skipAudio = true;
+					} else {
+						audioCodec = "opus";
+					}
+				}
 			}
 
-			audioSource = new AudioBufferSource({
-				codec: audioCodec,
-				bitrate: qualityMap[this.quality],
-			});
-			output.addAudioTrack(audioSource);
+			if (!skipAudio) {
+				audioSource = new AudioBufferSource({
+					codec: audioCodec,
+					bitrate: qualityMap[this.quality],
+				});
+				output.addAudioTrack(audioSource);
+			}
 		}
 
 		await output.start();

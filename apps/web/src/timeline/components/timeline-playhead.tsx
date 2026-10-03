@@ -20,6 +20,7 @@ import {
 import { useEditor } from "@/editor/use-editor";
 import { TIMELINE_SCROLLBAR_SIZE_PX } from "./layout";
 import { TIMELINE_LAYERS } from "./layers";
+import type { SnapPoint } from "@/timeline/snapping";
 
 interface TimelinePlayheadProps {
 	zoomLevel: number;
@@ -30,6 +31,7 @@ interface TimelinePlayheadProps {
 	timelineRef: React.RefObject<HTMLDivElement | null>;
 	playheadRef?: React.RefObject<HTMLDivElement | null>;
 	isSnappingToPlayhead?: boolean;
+	onSnapPointChange?: (snapPoint: SnapPoint | null) => void;
 }
 
 export function TimelinePlayhead({
@@ -41,6 +43,7 @@ export function TimelinePlayhead({
 	timelineRef,
 	playheadRef: externalPlayheadRef,
 	isSnappingToPlayhead = false,
+	onSnapPointChange,
 }: TimelinePlayheadProps) {
 	const editor = useEditor();
 	const duration = editor.timeline.getTotalDuration();
@@ -53,6 +56,7 @@ export function TimelinePlayhead({
 		rulerScrollRef,
 		tracksScrollRef,
 		playheadRef,
+		onSnapPointChange,
 	});
 	const { height: timelineHeight } = useContainerSize({ containerRef: timelineRef });
 	const { height: tracksHeight } = useContainerSize({
